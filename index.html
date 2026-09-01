@@ -8,8 +8,9 @@
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%;overflow:hidden;background:#07020a;color:#dff0ff;
   font-family:"Segoe UI",Inter,system-ui,-apple-system,sans-serif;
-  -webkit-font-smoothing:antialiased;user-select:none;cursor:crosshair}
-#c{position:fixed;inset:0;display:block}
+  -webkit-font-smoothing:antialiased;user-select:none;cursor:crosshair;
+  overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+#c{position:fixed;inset:0;display:block;touch-action:none}
 b{font-weight:700}
 
 /* ---------- HUD ---------- */
@@ -53,6 +54,7 @@ b{font-weight:700}
 
 #abilities{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:flex;gap:10px}
 .ab{position:relative;width:66px;height:66px;border-radius:12px;overflow:hidden;
+  pointer-events:auto;cursor:pointer;touch-action:manipulation;
   background:#0c1620dd;border:1px solid #23445e;display:flex;flex-direction:column;
   align-items:center;justify-content:center;gap:3px;box-shadow:0 6px 22px #000a}
 .ab .k{position:absolute;top:3px;left:6px;font-size:10px;color:#5f93b3;font-weight:700}
@@ -61,6 +63,8 @@ b{font-weight:700}
 .ab .cd{position:absolute;left:0;right:0;bottom:0;background:#000000b0;pointer-events:none;height:0%}
 .ab.ready{border-color:#3d7fa8;box-shadow:0 0 16px #2b8fc855,0 6px 22px #000a}
 .ab.on{border-color:#ffcc66;box-shadow:0 0 18px #ffbb4477}
+.ab.press{transform:scale(.93);border-color:#7fe3ff}
+.ab:active{transform:scale(.93)}
 #hint{position:absolute;left:50%;bottom:98px;transform:translateX(-50%);
   font-size:11px;letter-spacing:.2em;color:#4c728a;text-transform:uppercase;white-space:nowrap;
   transition:opacity 1.2s ease-out}
@@ -85,6 +89,88 @@ b{font-weight:700}
 #synergy .sPair{margin-top:4px;font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#c9a86a}
 #synergy .sDs{margin-top:12px;max-width:480px;font-size:13px;line-height:1.7;color:#e6d6b4}
 #synergy .sDs b{color:#ffe08a}
+
+/* ---------- touch controls ---------- */
+#touchctl{position:absolute;left:0;top:0;right:0;bottom:0;pointer-events:none;display:none}
+body.touch #touchctl{display:block}
+.pad{position:absolute;pointer-events:auto;width:78px;height:78px;border-radius:50%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  background:#0c1620cc;border:1px solid #2b5573;color:#9fc8e0;
+  font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;touch-action:none;
+  box-shadow:0 6px 22px #0008}
+.pad .pi{font-size:22px;line-height:1;color:#bfe6ff}
+.pad.on{border-color:#5fe3ff;background:#123246dd;box-shadow:0 0 22px #2ba9e0aa}
+#padCompress{left:16px;bottom:18px}
+#padSpread{left:104px;bottom:18px}
+#rotate{position:absolute;left:50%;top:52%;transform:translateX(-50%);display:none;
+  padding:9px 16px;border-radius:20px;background:#12283ae6;border:1px solid #2b5573;
+  color:#bfe6ff;font-size:11px;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap}
+body.touch.portrait #rotate{display:block}
+
+/* ---------- narrow screens ---------- */
+@media (max-width:900px){
+  #hud{padding:8px;font-size:11px}
+  #tl{left:8px;top:8px;width:170px}
+  .wave b{font-size:19px}
+  .wave{font-size:10px;letter-spacing:.14em}
+  .bar{height:11px;margin-top:5px}
+  .bar em{font-size:8px;letter-spacing:.08em}
+  .rowstats{gap:8px;font-size:9px;margin-top:5px}
+  .rowstats b{font-size:11px}
+  #tc{width:min(300px,52vw);top:6px}
+  #tc .lbl{font-size:8.5px;letter-spacing:.2em}
+  .hostbar{height:15px}
+  #vitals{gap:9px;font-size:8.5px}
+  #tr{right:8px;top:8px;font-size:9px;line-height:1.5}
+  #synActive{gap:3px}
+  .synChip{font-size:8px;padding:3px 7px}
+  #abilities{gap:6px;bottom:14px;left:auto;right:12px;transform:none;
+    max-width:58vw;flex-wrap:wrap;justify-content:flex-end}
+  .ab{width:50px;height:50px;border-radius:10px;gap:1px}
+  .ab .ic{font-size:16px}
+  .ab .nm{font-size:6.5px}
+  .ab .k{font-size:8px;top:2px;left:4px}
+  #hint{display:none}
+  #toast{font-size:11px;letter-spacing:.14em;top:14%}
+  .tag{font-size:12.5px;line-height:1.6}
+  .keys{font-size:11px;gap:5px 10px}
+  h1{letter-spacing:.1em}
+  .card{width:min(280px,86vw);min-height:0}
+  .card .ds{font-size:12px}
+  .cards{gap:12px;margin-top:16px}
+  .lvTitle{font-size:24px}
+  #synergy .sName{font-size:26px}
+  #synergy .sDs{font-size:12px;max-width:80vw}
+}
+@media (max-width:900px) and (orientation:landscape){
+  #tc{width:min(260px,38vw)}
+}
+/* Short viewports (a phone held sideways) must still show the start button
+   without scrolling, so the front matter compacts rather than overflows. */
+@media (max-height:560px){
+  .ov{padding:10px}
+  h1{font-size:clamp(30px,7vh,44px);letter-spacing:.1em}
+  .sub{font-size:9px;letter-spacing:.32em}
+  .tag{margin-top:8px;font-size:11.5px;line-height:1.5;max-width:min(620px,92vw)}
+  .keys{margin-top:10px;gap:3px 10px;font-size:10.5px}
+  kbd{padding:2px 6px;font-size:10px;border-bottom-width:1px}
+  .btn{margin-top:12px;padding:10px 30px;font-size:12px;letter-spacing:.2em}
+  .goStats{margin-top:10px;gap:5px 24px;font-size:11px}
+  .goStats b{font-size:15px}
+  .build{margin-top:10px;font-size:10px;line-height:1.7}
+  .cards{margin-top:12px;gap:10px}
+  .card{min-height:0;padding:12px;width:min(240px,30vw)}
+  .card .ttl{font-size:15px;margin-top:5px}
+  .card .ds{font-size:11px;margin-top:6px;line-height:1.45}
+  .card .ft{margin-top:8px;padding-top:6px}
+  .card .syn{margin-top:6px;padding:5px 8px;font-size:8.5px}
+  .card .glyph{font-size:48px}
+  .lvHead{font-size:9px;letter-spacing:.3em}
+  .lvTitle{font-size:20px;margin-top:2px}
+  #synergy .sGlyph{font-size:26px;margin:4px 0 0}
+  #synergy .sName{font-size:24px}
+  #synergy .sDs{margin-top:6px;font-size:11px;line-height:1.5}
+}
 
 #toast{position:absolute;left:50%;top:20%;transform:translateX(-50%);text-align:center;
   font-size:15px;letter-spacing:.24em;text-transform:uppercase;color:#ffe6a8;
@@ -173,6 +259,11 @@ kbd{display:inline-block;min-width:26px;text-align:center;padding:3px 7px;border
   <div id="abilities"></div>
   <div id="hint">Mouse steers the cytokine beacon &nbsp;·&nbsp; Hold LMB to compress &nbsp;·&nbsp; RMB to disperse</div>
   <div id="toast"></div>
+  <div id="touchctl">
+    <div class="pad" id="padCompress"><span class="pi">◉</span>Compress</div>
+    <div class="pad" id="padSpread"><span class="pi">◌</span>Disperse</div>
+    <div id="rotate">↻ Rotate to landscape for a wider view</div>
+  </div>
 </div>
 
 <div id="synergy">
@@ -192,7 +283,14 @@ kbd{display:inline-block;min-width:26px;text-align:center;padding:3px 7px;border
     Intercept them, engulf what your mass allows, and differentiate down the myeloid or lymphoid
     lineage before the body fails. Invest in <b>two</b> lineages at once and hybrid
     synergies switch themselves on.</div>
-  <div class="keys">
+  <div class="keys" id="touchKeys" style="display:none">
+    <kbd>DRAG</kbd><span>Drag anywhere to steer the cytokine beacon</span>
+    <kbd>◉</kbd><span>Hold to compress the swarm into a dense ramming ball</span>
+    <kbd>◌</kbd><span>Hold to disperse into a wide filter net</span>
+    <kbd>TAP</kbd><span>Tap an ability tile to fire it — they unlock as you differentiate</span>
+    <kbd>❚❚</kbd><span>Tap the pause tile to pause</span>
+  </div>
+  <div class="keys" id="mouseKeys">
     <kbd>MOUSE</kbd><span>Move the chemotactic beacon — the swarm follows</span>
     <kbd>LMB</kbd><span>Compress into a dense ramming ball</span>
     <kbd>RMB</kbd><span>Disperse into a wide filter net</span>
@@ -261,14 +359,24 @@ const d2    = (ax, ay, bx, by) => { const dx = bx - ax, dy = by - ay; return dx 
 
 const cv = document.getElementById('c');
 const ctx = cv.getContext('2d');
-let VW = 0, VH = 0, DPR = 1;
+let VW = 0, VH = 0, DPR = 1, VIEWZOOM = 1, TOUCH = false, LOWFX = false;
 
 function resize() {
-  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  /* Phones combine a 2-3x pixel ratio with far less fill rate. Capping the
+     backing store and dropping the most expensive effects keeps the frame
+     budget sane without touching gameplay. */
+  const coarse = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+  LOWFX = coarse || (window.innerWidth || 0) < 900;
+  DPR = Math.min(window.devicePixelRatio || 1, LOWFX ? 1.5 : 2);
   VW = Math.max(320, window.innerWidth || 0);
   VH = Math.max(240, window.innerHeight || 0);
   cv.width = Math.floor(VW * DPR); cv.height = Math.floor(VH * DPR);
   cv.style.width = VW + 'px'; cv.style.height = VH + 'px';
+  /* A phone viewport would otherwise show ~400 world units of a 3000x2200
+     arena. Pull the camera back on small screens so the player can still read
+     the battlefield, without changing any gameplay distance. */
+  VIEWZOOM = clamp(Math.min(VW, VH * 1.9) / 1500, 0.6, 1);
+  document.body.classList.toggle('portrait', VH > VW);
 }
 window.addEventListener('resize', resize); resize();
 
@@ -2117,17 +2225,18 @@ function roundRect(x, y, w, h, r) {
 function drawProjectiles() {
   for (const b of G.projs) {
     ctx.save(); ctx.translate(b.x, b.y);
+    const blur = LOWFX ? 0 : 1;
     if (b.kind === 'ops') {
-      ctx.fillStyle = '#ffd76a'; ctx.shadowColor = '#ffb300'; ctx.shadowBlur = 12;
+      ctx.fillStyle = '#ffd76a'; ctx.shadowColor = '#ffb300'; ctx.shadowBlur = 12 * blur;
       ctx.beginPath(); ctx.arc(0, 0, b.r * 0.62, 0, TAU); ctx.fill();
     } else if (b.kind === 'pore') {
       ctx.rotate(b.ang * 0.4);
-      ctx.strokeStyle = '#ffb0a0'; ctx.lineWidth = 2; ctx.shadowColor = '#ff6a5a'; ctx.shadowBlur = 10;
+      ctx.strokeStyle = '#ffb0a0'; ctx.lineWidth = 2; ctx.shadowColor = '#ff6a5a'; ctx.shadowBlur = 10 * blur;
       ctx.beginPath(); ctx.arc(0, 0, b.r * 0.7, 0, TAU); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(-b.r, 0); ctx.lineTo(b.r, 0); ctx.stroke();
     } else {
       ctx.rotate(b.ang); ctx.strokeStyle = '#dff0ff'; ctx.lineWidth = 2.6; ctx.lineCap = 'round';
-      ctx.shadowColor = '#8fd0ff'; ctx.shadowBlur = 10;
+      ctx.shadowColor = '#8fd0ff'; ctx.shadowBlur = 10 * blur;
       ctx.beginPath();
       ctx.moveTo(0, 5); ctx.lineTo(0, -1);
       ctx.moveTo(0, -1); ctx.lineTo(-5, -7);
@@ -2275,8 +2384,12 @@ function drawThreatMarkers() {
 
 /* ------------------------------------------------------- minimap ----- */
 function drawMinimap() {
-  const w = 186, h = w * (ARENA.h / ARENA.w);
-  const x0 = VW - w - 16, y0 = VH - h - 16;
+  const small = VW < 900;
+  const w = small ? 128 : 186, h = w * (ARENA.h / ARENA.w);
+  /* On touch the bottom corners belong to the thumbs: pads bottom-left,
+     ability tiles bottom-right. The map sits just above the pads. */
+  const x0 = small ? 14 : VW - w - 16;
+  const y0 = small ? VH - h - (TOUCH ? 108 : 16) : VH - h - 16;
   const sx = w / ARENA.w, sy = h / ARENA.h;
   ctx.save();
   ctx.globalAlpha = 0.85;
@@ -2328,6 +2441,7 @@ const ABILITIES = [
   { key: 'R', slot: 'titan', ic: '◉', nm: 'Fusion', has: () => (G.up['titan'] || 0) > 0, max: () => S.titanCd },
   { key: 'T', slot: 'granz', ic: '⬡', nm: 'Granzyme', has: () => (G.up['granzyme'] || 0) > 0, max: () => S.granzCd },
   { key: 'C', slot: 'stance', ic: '⇄', nm: 'Stance', has: () => (G.up['m1'] || 0) + (G.up['m2'] || 0) > 0, toggle: true },
+  { key: 'P', slot: 'pause', ic: '❚❚', nm: 'Pause', has: () => TOUCH, toggle: true },
 ];
 let abEls = [];
 function buildAbilityBar() {
@@ -2338,6 +2452,15 @@ function buildAbilityBar() {
     d.className = 'ab';
     d.innerHTML = '<span class="k">' + a.key + '</span><span class="ic">' + a.ic +
       '</span><span class="nm">' + a.nm + '</span><span class="cd"></span>';
+    d.addEventListener('pointerdown', ev => {
+      ev.preventDefault(); ev.stopPropagation();
+      d.classList.add('press');
+      triggerAbility(a.slot);
+    });
+    const release = () => d.classList.remove('press');
+    d.addEventListener('pointerup', release);
+    d.addEventListener('pointercancel', release);
+    d.addEventListener('pointerleave', release);
     host.appendChild(d);
     abEls.push({ a, el: d, cd: d.querySelector('.cd') });
   }
@@ -2345,7 +2468,8 @@ function buildAbilityBar() {
 function updateAbilityBar() {
   for (const e of abEls) {
     if (e.a.toggle) {
-      e.el.className = 'ab ' + (G.stance ? 'on' : 'ready');
+      const lit = e.a.slot === 'pause' ? G.mode === 'paused' : !!G.stance;
+      e.el.className = 'ab ' + (lit ? 'on' : 'ready');
       e.cd.style.height = '0%';
       continue;
     }
@@ -2353,6 +2477,23 @@ function updateAbilityBar() {
     e.cd.style.height = (clamp(t / m, 0, 1) * 100) + '%';
     e.el.className = 'ab' + (t <= 0 ? ' ready' : '');
   }
+}
+
+function triggerAbility(slot) {
+  if (G.mode !== 'play') return;
+  if (slot === 'ops') fireOpsonin();
+  else if (slot === 'agg') fireAgglutinin();
+  else if (slot === 'ros') oxidativeBurst();
+  else if (slot === 'spray') superoxideSpray();
+  else if (slot === 'titan') giantCellFusion();
+  else if (slot === 'granz') granzymeSentence();
+  else if (slot === 'stance') toggleStance();
+  else if (slot === 'pause') togglePause();
+}
+function togglePause() {
+  if (G.mode !== 'play' && G.mode !== 'paused') return;
+  G.mode = G.mode === 'play' ? 'paused' : 'play';
+  $('pause').classList.toggle('show', G.mode === 'paused');
 }
 
 let toastT = 0;
@@ -2473,29 +2614,95 @@ function updateHud() {
 
 /* ====================================================== 13. INPUT */
 const mouse = { x: 0, y: 0 };
-window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
-window.addEventListener('mousedown', e => {
-  if (G.mode !== 'play') return;
-  if (e.button === 0) G.form = 0;
-  if (e.button === 2) G.form = 2;
-});
-window.addEventListener('mouseup', e => { if (e.button === 0 || e.button === 2) G.form = 1; });
+
+/* Touch mode is not a one-shot capability check. Emulators and some browsers
+   settle their pointer media queries after load, hybrid laptops report a fine
+   pointer until you actually touch the screen, and orientation changes can
+   flip things. So: guess at load, re-check on resize, and switch on for good
+   the moment a real touch arrives. */
+function setTouchMode(on) {
+  if (on === TOUCH) return;
+  TOUCH = on;
+  document.body.classList.toggle('touch', on);
+  const tk = $('touchKeys'), mk = $('mouseKeys');
+  if (tk) tk.style.display = on ? 'grid' : 'none';
+  if (mk) mk.style.display = on ? 'none' : 'grid';
+  buildAbilityBar();
+}
+function coarsePointer() {
+  return !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+}
+setTouchMode(coarsePointer());
+window.addEventListener('resize', () => { if (coarsePointer()) setTouchMode(true); });
+
+/* --- steering: a mouse hovers, a finger drags. One code path. --- */
+let steerId = null;
+function steerTo(e) { mouse.x = e.clientX; mouse.y = e.clientY; }
+
+cv.addEventListener('pointermove', e => {
+  if (e.pointerType === 'mouse') steerTo(e);
+  else if (steerId === e.pointerId) { steerTo(e); e.preventDefault(); }
+}, { passive: false });
+
+cv.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'mouse') {
+    if (G.mode !== 'play') return;
+    if (e.button === 0) G.form = 0;
+    if (e.button === 2) G.form = 2;
+    return;
+  }
+  setTouchMode(true);
+  if (steerId !== null) return;              /* first finger steers, others are for the pads */
+  steerId = e.pointerId;
+  steerTo(e);
+  if (cv.setPointerCapture) { try { cv.setPointerCapture(e.pointerId); } catch (_) {} }
+  e.preventDefault();
+}, { passive: false });
+
+function endSteer(e) {
+  if (e.pointerType === 'mouse') { if (e.button === 0 || e.button === 2) G.form = 1; return; }
+  if (steerId === e.pointerId) steerId = null;
+}
+cv.addEventListener('pointerup', endSteer);
+cv.addEventListener('pointercancel', endSteer);
+window.addEventListener('pointerup', endSteer);
+
 window.addEventListener('contextmenu', e => e.preventDefault());
-window.addEventListener('blur', () => { G.form = 1; });
+window.addEventListener('blur', () => { G.form = 1; steerId = null; });
+
+/* --- formation pads --- */
+function bindPad(id, form) {
+  const el = $(id);
+  if (!el) return;
+  let held = null;
+  const on = e => {
+    if (G.mode !== 'play') return;
+    held = e.pointerId; G.form = form; el.classList.add('on');
+    e.preventDefault(); e.stopPropagation();
+  };
+  const off = e => {
+    if (held !== null && e.pointerId !== undefined && e.pointerId !== held) return;
+    held = null; G.form = 1; el.classList.remove('on');
+  };
+  el.addEventListener('pointerdown', on, { passive: false });
+  el.addEventListener('pointerup', off);
+  el.addEventListener('pointercancel', off);
+  el.addEventListener('pointerleave', off);
+}
+bindPad('padCompress', 0);
+bindPad('padSpread', 2);
+
 window.addEventListener('keydown', e => {
   const k = e.key.toLowerCase();
-  if (k === 'p' && (G.mode === 'play' || G.mode === 'paused')) {
-    G.mode = G.mode === 'play' ? 'paused' : 'play';
-    $('pause').classList.toggle('show', G.mode === 'paused');
-  }
+  if (k === 'p') { togglePause(); return; }
   if (G.mode !== 'play') return;
-  if (k === 'q') fireOpsonin();
-  else if (k === 'e') fireAgglutinin();
-  else if (k === ' ') { e.preventDefault(); oxidativeBurst(); }
-  else if (k === 'f') superoxideSpray();
-  else if (k === 'r') giantCellFusion();
-  else if (k === 't') granzymeSentence();
-  else if (k === 'c') toggleStance();
+  if (k === 'q') triggerAbility('ops');
+  else if (k === 'e') triggerAbility('agg');
+  else if (k === ' ') { e.preventDefault(); triggerAbility('ros'); }
+  else if (k === 'f') triggerAbility('spray');
+  else if (k === 'r') triggerAbility('titan');
+  else if (k === 't') triggerAbility('granz');
+  else if (k === 'c') triggerAbility('stance');
 });
 
 /* ================================================ GAME CONTROL */
@@ -2514,6 +2721,8 @@ function reset() {
   G.host = 100; G.oxy = 1; G.rbcTimer = 0; G.mitosisBlock = 0;
   G.cd = { ops: 0, agg: 0, ros: 0, spray: 0, titan: 0, granz: 0 };
   G.form = 1; G.formLerp = FORM_R[1];
+  steerId = null;                                  /* a finger held across a restart must not stick */
+  document.querySelectorAll('.pad.on').forEach(el => el.classList.remove('on'));
   G.beacon.x = ARENA.w / 2; G.beacon.y = ARENA.h / 2;
   G.cam.x = ARENA.w / 2; G.cam.y = ARENA.h / 2; G.cam.zoom = 1; G.cam.shake = 0;
   G.shx = 0; G.shy = 0; G.dangerFlash = 0; G.mitosisT = 0;
@@ -2611,7 +2820,7 @@ function stepSim(dt) {
 
 function drawFrame(dt) {
   const c = swarmCenter();
-  const zt = [1.04, 0.96, 0.82][G.form];
+  const zt = [1.04, 0.96, 0.82][G.form] * VIEWZOOM;
   G.cam.zoom = lerp(G.cam.zoom, zt, 1 - Math.exp(-3 * dt));
   G.cam.x = lerp(G.cam.x, (c.x * 2 + G.beacon.x) / 3, 1 - Math.exp(-6 * dt));
   G.cam.y = lerp(G.cam.y, (c.y * 2 + G.beacon.y) / 3, 1 - Math.exp(-6 * dt));

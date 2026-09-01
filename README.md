@@ -25,6 +25,25 @@ objective against the **host**. You are an interceptor, and the clock is the hos
 | `C` | Toggle M1 / M2 macrophage stance |
 | `P` | Pause |
 
+### Touch
+
+The game detects a touch device at load, and switches on the first real touch
+regardless — so hybrid laptops get mouse controls until you actually reach for the screen.
+
+| Input | Action |
+| :--- | :--- |
+| Drag anywhere | Steer the beacon. The first finger down owns steering; later fingers are ignored so you can hold a pad without losing the swarm |
+| **Compress** pad | Hold to ball the swarm up (bottom-left) |
+| **Disperse** pad | Hold to spread into a filter net |
+| Tap an ability tile | Fires it — tiles are live on desktop too, so abilities are clickable there as well |
+| Pause tile | Only present on touch |
+
+Landscape is strongly preferred and the game says so in portrait. The camera pulls back on
+small viewports (`VIEWZOOM`) so a phone still sees a useful slice of the arena instead of ~400
+world units of a 3000×2200 vessel — this changes framing only, never gameplay distances.
+Phones also cap the backing store at 1.5× and drop shadow blur, which are the two things that
+actually cost fill rate.
+
 ## Losing
 
 **Host integrity** is the primary meter and the primary fail state. It drains from every
