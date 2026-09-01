@@ -1,0 +1,2638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>PHAGO — White Blood Cell Swarm</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;background:#07020a;color:#dff0ff;
+  font-family:"Segoe UI",Inter,system-ui,-apple-system,sans-serif;
+  -webkit-font-smoothing:antialiased;user-select:none;cursor:crosshair}
+#c{position:fixed;inset:0;display:block}
+b{font-weight:700}
+
+/* ---------- HUD ---------- */
+#hud{position:fixed;inset:0;pointer-events:none;padding:16px;font-size:13px}
+#tl{position:absolute;left:16px;top:14px;width:280px}
+.wave{font-size:12px;letter-spacing:.22em;color:#7fd4ff;text-transform:uppercase;
+  display:flex;align-items:baseline;gap:8px;text-shadow:0 0 12px #00aaff66}
+.wave b{font-size:26px;letter-spacing:0;color:#eaf9ff;line-height:1}
+.wave span{font-size:11px;letter-spacing:.1em;color:#5a8ba8}
+.bar{position:relative;height:14px;margin-top:9px;border-radius:8px;
+  background:#0e1a26cc;border:1px solid #1e3d55;overflow:hidden}
+.bar i{position:absolute;left:0;top:0;bottom:0;width:0%;display:block;border-radius:7px}
+.bar em{position:absolute;left:0;right:0;top:0;bottom:0;display:flex;align-items:center;
+  justify-content:center;font-style:normal;font-size:9px;letter-spacing:.16em;text-shadow:0 1px 3px #000d}
+#xpFill{background:linear-gradient(90deg,#1f7fb8,#5fe3ff);box-shadow:0 0 14px #4fd8ffaa}
+#hpFill{background:linear-gradient(90deg,#b83a5c,#ff87a8);box-shadow:0 0 14px #ff5c88aa}
+.rowstats{display:flex;gap:14px;margin-top:9px;font-size:11px;letter-spacing:.1em;color:#68a5c4}
+.rowstats b{color:#eaf9ff;font-size:13px}
+#tc{position:absolute;left:50%;top:12px;transform:translateX(-50%);width:min(420px,42vw);text-align:center}
+#tc .lbl{font-size:10px;letter-spacing:.34em;color:#ff9fb0;text-transform:uppercase;
+  text-shadow:0 0 14px #ff3d6644}
+.hostbar{position:relative;height:19px;margin-top:6px;border-radius:10px;
+  background:#1a0710cc;border:1px solid #6b1e30;overflow:hidden;box-shadow:0 0 26px #ff2a5522 inset}
+#hostFill{position:absolute;left:0;top:0;bottom:0;width:100%;border-radius:9px;
+  background:linear-gradient(90deg,#a8203c,#ff6a86 60%,#ffb0a0);box-shadow:0 0 18px #ff4a6acc}
+#hostFill.crit{animation:pulseH .7s ease-in-out infinite}
+@keyframes pulseH{0%,100%{filter:brightness(1)}50%{filter:brightness(1.7)}}
+.hostbar em{position:absolute;left:0;right:0;top:0;bottom:0;display:flex;align-items:center;
+  justify-content:center;font-style:normal;font-size:10px;letter-spacing:.2em;
+  color:#ffe9ec;text-shadow:0 1px 3px #000e}
+#vitals{margin-top:6px;display:flex;gap:16px;justify-content:center;font-size:10.5px;
+  letter-spacing:.14em;color:#9c7d86;text-transform:uppercase}
+#vitals b{color:#ffd7dc}
+#vitals .warn{color:#ff8a6a}
+#tr{position:absolute;right:16px;top:14px;text-align:right;font-size:11px;
+  letter-spacing:.12em;color:#7d93a8;line-height:1.7}
+#tr b{color:#ffd9a0}
+#stance{margin-top:6px;font-size:11px;letter-spacing:.14em}
+#antigen{margin-top:6px;font-size:11px;letter-spacing:.14em;color:#c39bff;
+  text-shadow:0 0 14px #8a5cff66}
+
+#abilities{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:flex;gap:10px}
+.ab{position:relative;width:66px;height:66px;border-radius:12px;overflow:hidden;
+  background:#0c1620dd;border:1px solid #23445e;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:3px;box-shadow:0 6px 22px #000a}
+.ab .k{position:absolute;top:3px;left:6px;font-size:10px;color:#5f93b3;font-weight:700}
+.ab .ic{font-size:22px;line-height:1}
+.ab .nm{font-size:8px;letter-spacing:.06em;color:#8fb6cc;text-align:center;padding:0 3px;text-transform:uppercase}
+.ab .cd{position:absolute;left:0;right:0;bottom:0;background:#000000b0;pointer-events:none;height:0%}
+.ab.ready{border-color:#3d7fa8;box-shadow:0 0 16px #2b8fc855,0 6px 22px #000a}
+.ab.on{border-color:#ffcc66;box-shadow:0 0 18px #ffbb4477}
+#hint{position:absolute;left:50%;bottom:98px;transform:translateX(-50%);
+  font-size:11px;letter-spacing:.2em;color:#4c728a;text-transform:uppercase;white-space:nowrap;
+  transition:opacity 1.2s ease-out}
+#synActive{margin-top:10px;display:flex;flex-direction:column;gap:5px;align-items:flex-end}
+.synChip{display:flex;align-items:center;gap:7px;padding:4px 10px;border-radius:20px;
+  font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#ffe9b0;
+  background:linear-gradient(90deg,#3a2a0acc,#1a1206cc);border:1px solid #7a5a1e;
+  box-shadow:0 0 16px #ffb84422}
+.synChip i{font-style:normal;font-size:12px;color:#ffd76a}
+
+#synergy{position:fixed;left:50%;top:30%;transform:translate(-50%,-50%) scale(.9);
+  text-align:center;pointer-events:none;opacity:0;z-index:9;
+  transition:opacity .5s ease-out,transform .5s cubic-bezier(.2,1.4,.4,1)}
+#synergy.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#synergy .sTag{font-size:10px;letter-spacing:.5em;text-transform:uppercase;color:#ffd76a}
+#synergy .sGlyph{font-size:40px;margin:8px 0 2px;letter-spacing:.1em;
+  filter:drop-shadow(0 0 18px #ffb84488)}
+#synergy .sName{font-size:34px;font-weight:800;letter-spacing:.06em;
+  background:linear-gradient(180deg,#fff6df,#ffc65e 60%,#c07c14);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 26px #ffab3388)}
+#synergy .sPair{margin-top:4px;font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#c9a86a}
+#synergy .sDs{margin-top:12px;max-width:480px;font-size:13px;line-height:1.7;color:#e6d6b4}
+#synergy .sDs b{color:#ffe08a}
+
+#toast{position:absolute;left:50%;top:20%;transform:translateX(-50%);text-align:center;
+  font-size:15px;letter-spacing:.24em;text-transform:uppercase;color:#ffe6a8;
+  text-shadow:0 0 22px #ff9b3388;opacity:0;transition:opacity .35s;white-space:nowrap}
+
+/* ---------- Overlays ---------- */
+.ov{position:fixed;left:0;top:0;right:0;bottom:0;display:none;align-items:center;justify-content:center;
+  flex-direction:column;background:radial-gradient(ellipse at 50% 40%,#2a0716e6,#04010799 60%,#020105fa);
+  z-index:10;padding:24px;cursor:default;overflow:auto}
+.ov.show{display:flex;animation:fade .35s ease-out}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+h1{font-size:clamp(52px,11vw,120px);letter-spacing:.16em;font-weight:800;
+  background:linear-gradient(180deg,#ffffff,#6fd8ff 55%,#1d7ba8);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 34px #23a6e070)}
+.sub{margin-top:-2px;font-size:12px;letter-spacing:.5em;color:#5f9ec0;text-transform:uppercase}
+.tag{margin-top:20px;max-width:600px;text-align:center;font-size:14px;line-height:1.75;color:#a8c6d8}
+.keys{margin-top:24px;display:grid;grid-template-columns:auto auto;gap:7px 16px;font-size:12px;
+  color:#8fb0c4;align-items:center}
+kbd{display:inline-block;min-width:26px;text-align:center;padding:3px 7px;border-radius:5px;
+  background:#10202dcc;border:1px solid #2b5573;border-bottom-width:2px;
+  font-family:ui-monospace,Consolas,monospace;font-size:11px;color:#bfe6ff}
+.btn{margin-top:28px;pointer-events:auto;cursor:pointer;padding:14px 46px;border-radius:40px;border:none;
+  font-size:14px;letter-spacing:.28em;font-weight:700;text-transform:uppercase;color:#02121c;
+  background:linear-gradient(180deg,#8ce8ff,#26a2d8);box-shadow:0 0 34px #2ba9e099,0 8px 24px #0008;
+  transition:transform .12s,box-shadow .12s;font-family:inherit}
+.btn:hover{transform:translateY(-2px);box-shadow:0 0 48px #4cc8ffcc,0 12px 30px #0009}
+.btn:active{transform:translateY(1px)}
+
+#levelup{background:radial-gradient(ellipse at 50% 45%,#04283ae6,#020a12f2)}
+.lvHead{font-size:12px;letter-spacing:.42em;color:#6fd0ff;text-transform:uppercase}
+.lvTitle{margin-top:6px;font-size:32px;font-weight:800;letter-spacing:.06em;color:#eaf9ff;
+  text-shadow:0 0 30px #2ea6e0aa}
+.cards{margin-top:26px;display:flex;gap:18px;flex-wrap:wrap;justify-content:center;max-width:1100px}
+.card{position:relative;pointer-events:auto;cursor:pointer;width:272px;min-height:252px;border-radius:16px;
+  padding:20px;background:linear-gradient(180deg,#0d1c28f2,#081018f7);border:1px solid #21455f;
+  display:flex;flex-direction:column;text-align:left;overflow:hidden;
+  transition:transform .14s,border-color .14s,box-shadow .14s;font-family:inherit;color:inherit}
+.card:hover{transform:translateY(-6px) scale(1.02);border-color:var(--ac);box-shadow:0 0 30px var(--gl),0 16px 40px #000a}
+.card .br{font-size:9px;letter-spacing:.24em;text-transform:uppercase;color:var(--ac);font-weight:700}
+.card .ttl{margin-top:10px;font-size:19px;font-weight:700;color:#f0fbff;line-height:1.25}
+.card .ds{margin-top:11px;font-size:12.5px;line-height:1.65;color:#9dbccd;flex:1}
+.card .ft{margin-top:14px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#5d7f94;
+  border-top:1px solid #17303f;padding-top:10px}
+.card .glyph{position:absolute;font-size:74px;opacity:.09;right:10px;top:-6px;pointer-events:none}
+.card .syn{margin-top:10px;padding:7px 10px;border-radius:8px;font-size:9.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:#1a1206;font-weight:700;line-height:1.5;
+  background:linear-gradient(90deg,#ffd76a,#ffab33);box-shadow:0 0 18px #ffb84455}
+.goStats{margin-top:22px;display:grid;grid-template-columns:repeat(2,auto);gap:10px 40px;font-size:13px;color:#9bb8ca}
+.goStats b{color:#eaf9ff;font-size:19px}
+.build{margin-top:20px;max-width:680px;text-align:center;font-size:11.5px;line-height:2;color:#7fa0b4}
+.build span{display:inline-block;margin:2px 3px;padding:3px 10px;border-radius:20px;
+  background:#0f2130;border:1px solid #244a63}
+#pauseTxt{font-size:13px;letter-spacing:.4em;color:#7fb8d8;text-transform:uppercase}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="hud">
+  <div id="tl">
+    <div class="wave">Wave <b id="waveNum">1</b><span id="waveSub"></span></div>
+    <div class="bar"><i id="xpFill"></i><em id="xpTxt">LVL 1</em></div>
+    <div class="bar"><i id="hpFill"></i><em id="hpTxt">SWARM INTEGRITY</em></div>
+    <div class="rowstats">
+      <div>NODES <b id="nodeCount">0</b><span style="opacity:.5">/<span id="nodeMax">0</span></span></div>
+      <div>BIOMASS <b id="biomass">0</b></div>
+      <div>DIGESTING <b id="digCount">0</b></div>
+    </div>
+  </div>
+  <div id="tc">
+    <div class="lbl">Host Integrity</div>
+    <div class="hostbar"><i id="hostFill"></i><em id="hostTxt">100%</em></div>
+    <div id="vitals">
+      <div>ERYTHROCYTES <b id="rbcCount">0</b></div>
+      <div>O<sub>2</sub> <b id="oxy">100%</b></div>
+      <div id="breachWrap">BREACHES <b id="breaches">0</b></div>
+    </div>
+  </div>
+  <div id="tr">
+    <div>PATHOGENS <b id="threatCount">0</b></div>
+    <div id="antigen"></div>
+    <div id="stance"></div>
+    <div id="synActive"></div>
+  </div>
+  <div id="abilities"></div>
+  <div id="hint">Mouse steers the cytokine beacon &nbsp;·&nbsp; Hold LMB to compress &nbsp;·&nbsp; RMB to disperse</div>
+  <div id="toast"></div>
+</div>
+
+<div id="synergy">
+  <div class="sTag">Hybrid Synergy Online</div>
+  <div class="sGlyph" id="synGlyph">✦◉</div>
+  <div class="sName" id="synName">Opsonin Feast</div>
+  <div class="sPair" id="synPair">Neutrophil + Macrophage</div>
+  <div class="sDs" id="synDs"></div>
+</div>
+
+<div class="ov show" id="menu">
+  <h1>PHAGO</h1>
+  <div class="sub">White Blood Cell Swarm</div>
+  <div class="tag">You are not a cell. You are the <b>signal</b> — a cytokine gradient that a swarm of leukocytes
+    chases through the bloodstream. The pathogens are not hunting you: they are hunting the
+    <b>host</b>, lysing erythrocytes for iron, liquefying the vessel wall and seeding fungal mats.
+    Intercept them, engulf what your mass allows, and differentiate down the myeloid or lymphoid
+    lineage before the body fails. Invest in <b>two</b> lineages at once and hybrid
+    synergies switch themselves on.</div>
+  <div class="keys">
+    <kbd>MOUSE</kbd><span>Move the chemotactic beacon — the swarm follows</span>
+    <kbd>LMB</kbd><span>Compress into a dense ramming ball</span>
+    <kbd>RMB</kbd><span>Disperse into a wide filter net</span>
+    <kbd>Q</kbd><span>Opsonin volley — tag targets, strip capsules, double digestion</span>
+    <kbd>E</kbd><span>Agglutination volley — clump pathogens into slow clusters</span>
+    <kbd>SPACE</kbd><span>Oxidative burst — reactive oxygen AoE, costs swarm integrity</span>
+    <kbd>F</kbd><span>Superoxide spray &nbsp;—&nbsp; <kbd>R</kbd> giant cell fusion &nbsp;—&nbsp; <kbd>T</kbd> death sentence</span>
+    <kbd>C</kbd><span>Toggle macrophage stance, once unlocked</span>
+    <kbd>P</kbd><span>Pause</span>
+  </div>
+  <button class="btn" id="startBtn">Begin Response</button>
+</div>
+
+<div class="ov" id="levelup">
+  <div class="lvHead">Hematopoiesis</div>
+  <div class="lvTitle" id="lvTitle">Differentiate the Swarm</div>
+  <div class="cards" id="cards"></div>
+</div>
+
+<div class="ov" id="gameover">
+  <h1 id="goTitle" style="font-size:clamp(38px,7vw,74px);background:linear-gradient(180deg,#fff,#ff8fa8 55%,#a02744);-webkit-background-clip:text;background-clip:text">HOST LOST</h1>
+  <div class="sub" id="goSub">Systemic collapse</div>
+  <div class="goStats">
+    <div>WAVES SURVIVED <b id="goWave">0</b></div>
+    <div>PATHOGENS DEVOURED <b id="goKills">0</b></div>
+    <div>ERYTHROCYTES LOST <b id="goLysed">0</b></div>
+    <div>HOST REMAINING <b id="goHost">0%</b></div>
+    <div>BIOMASS METABOLIZED <b id="goBio">0</b></div>
+    <div>LINEAGE LEVEL <b id="goLvl">0</b></div>
+  </div>
+  <div class="build" id="goBuild"></div>
+  <button class="btn" id="againBtn">Culture Again</button>
+</div>
+
+<div class="ov" id="pause">
+  <h1 style="font-size:clamp(30px,6vw,60px)">PAUSED</h1>
+  <div id="pauseTxt">Press P to resume</div>
+</div>
+
+<script>
+"use strict";
+/* =========================================================================
+   PHAGO — White Blood Cell Swarm
+   Single-file HTML5 canvas roguelite.
+
+   The pathogens are not attracted to the swarm. Every species carries its own
+   objective against the HOST — erythrocytes for iron, the endothelium, or the
+   leukocytes themselves — and the player is an interceptor, not a magnet.
+
+     1. Utilities              6. Simulation      11. Rendering
+     2. Game state + stats     7. Projectiles     12. UI
+     3. Pathogen species       8. Abilities       13. Input
+     4. Upgrade tree           9. Waves           14. Main loop
+     5. Entity factories
+   ========================================================================= */
+
+/* ---------------------------------------------------------------- 1. UTIL */
+const TAU = Math.PI * 2;
+const rand  = (a, b) => a + Math.random() * (b - a);
+const randi = (a, b) => Math.floor(rand(a, b));
+const pick  = a => a[randi(0, a.length)];
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const lerp  = (a, b, t) => a + (b - a) * t;
+const len   = (x, y) => Math.hypot(x, y);
+const d2    = (ax, ay, bx, by) => { const dx = bx - ax, dy = by - ay; return dx * dx + dy * dy; };
+
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+let VW = 0, VH = 0, DPR = 1;
+
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  VW = Math.max(320, window.innerWidth || 0);
+  VH = Math.max(240, window.innerHeight || 0);
+  cv.width = Math.floor(VW * DPR); cv.height = Math.floor(VH * DPR);
+  cv.style.width = VW + 'px'; cv.style.height = VH + 'px';
+}
+window.addEventListener('resize', resize); resize();
+
+const $ = id => document.getElementById(id);
+
+/* Arena — a section of vessel the swarm patrols */
+const ARENA = { w: 3000, h: 2200 };
+const RBC_CAP = 165;
+
+/* ------------------------------------------------------- 2. GAME STATE */
+const G = {
+  mode: 'menu',            // menu | play | levelup | dead | paused
+  t: 0, dt: 0,
+  nodes: [], paths: [], projs: [], fx: [], pops: [],
+  rbcs: [], plts: [], mats: [], wall: [],
+  beacon: { x: ARENA.w / 2, y: ARENA.h / 2 },
+  form: 1, formLerp: 1,
+  cam: { x: 0, y: 0, shake: 0, zoom: 1 },
+  shx: 0, shy: 0, dangerFlash: 0,
+
+  host: 100, hostMax: 100, oxy: 1,
+  rbcTimer: 0, breaches: 0,
+  mitosisBlock: 0,         // T3SS suppression, seconds
+
+  level: 1, xp: 0, xpNext: 55, biomass: 0, pending: 0,
+  wave: 0, waveState: 'idle', waveTimer: 3, spawnQueue: [], spawnTimer: 0,
+  kills: 0, lysed: 0, elapsed: 0,
+  up: {}, order: [], stance: null,
+  cd: { ops: 0, agg: 0, ros: 0, spray: 0, titan: 0, granz: 0 },
+  titan: null, granzyme: null,
+  buffs: { interleukin: 0 },
+  memory: {},
+  mitosisT: 0, deathReason: '', seen: {},
+  syn: {}, present: null,
+  tel: { lysis: 0, burst: 0, clear: 0, wallHost: 0, matHost: 0 },
+};
+
+/* Derived stats, recomputed on every upgrade pick */
+const S = {};
+function recalc() {
+  const n = id => G.up[id] || 0;
+  S.maxNodes    = 20 + Math.floor(G.level * 1.5) + n('mitosis') * 5;
+  S.mitosisTime = 4.2 / (1 + n('mitosis') * 0.4);
+  S.nodeHp      = 30 * (1 + n('elastic') * 0.22);
+  /* Anaemia is systemic: fewer erythrocytes means less oxygen for the swarm. */
+  S.speed       = 205 * (1 + n('chemo') * 0.09) * (G.stance === 'M1' ? 0.8 : 1) * (0.80 + 0.20 * G.oxy);
+  S.accel       = 6.4 * (1 + n('chemo') * 0.07);
+  S.sep         = 1 + n('elastic') * 0.18;
+  S.engulf      = 1 * (1 + n('deep') * 0.5);
+  S.digestMult  = Math.max(0.25, 1 - n('chitin') * 0.3);
+  S.contact     = 6 + n('perforin') * 3;
+  S.pierce      = n('perforin') > 0 ? 0.5 + (n('perforin') - 1) * 0.2 : 0;
+  S.homing      = n('receptor') * 0.35;
+  S.burn        = n('granule') * 11;
+  S.marginate   = n('marginate') * 0.25;
+  S.knock       = 1 + (G.stance === 'M1' ? 1.6 : 0);
+  S.dmgRes      = (G.stance === 'M1' ? 0.2 : 0) + (G.stance === 'M2' ? 0.4 : 0);
+  S.regenAura   = G.stance === 'M2' ? 5.5 : 0;
+  S.dmgMult     = 1 + (G.buffs.interleukin > 0 ? 0.2 : 0);
+  S.devourMult  = 1 + (G.buffs.interleukin > 0 ? 0.2 : 0);
+  S.opsCd = 3.6; S.aggCd = 7.5; S.rosCd = 11;
+  S.sprayCd = Math.max(3, 6.5 - (n('superoxide') - 1) * 1.2);
+  S.titanCd = 26; S.granzCd = 14;
+}
+
+/* Host bookkeeping ------------------------------------------------------ */
+function hostDamage(v, x, y, label) {
+  if (G.host <= 0) return;
+  G.host = Math.max(0, G.host - v);
+  if (label && x !== undefined) pop(x, y, label, '#ff8a9c', 11);
+  if (v >= 0.5) shake(Math.min(6, v * 2));
+}
+
+/* ------------------------------------------------- 3. PATHOGEN SPECIES */
+/* goal: what this species is actually trying to do to the host.
+     rbc   — hunt erythrocytes for iron
+     wall  — liquefy the endothelium
+     swarm — hunt leukocytes directly (apoptosis hijacking)
+     mat   — root down and occlude the vessel                                */
+const PATHO = {
+  strep: {
+    name: 'Streptococcus', sci: 'Streptolysin O · haemolytic',
+    mass: 0.85, hp: 16, r: 9, speed: 84, dmg: 9, armor: 0, col: '#79dd8b',
+    cost: 1, minWave: 1, shape: 'sphere', goal: 'rbc', rbcDps: 9,
+    threat: 'HAEMOLYSIS',
+  },
+  salmonella: {
+    name: 'Salmonella', sci: 'Caspase-1 inflammasome · pyroptotic',
+    mass: 2.6, hp: 38, r: 14, speed: 66, dmg: 14, armor: 2, col: '#a6d95a',
+    cost: 2, minWave: 2, shape: 'rod', goal: 'rbc', rbcDps: 13, pyro: true,
+    threat: 'PYROPTOTIC STRAIN',
+  },
+  merozoite: {
+    name: 'Merozoite', sci: 'Plasmodium · intracellular parasite',
+    mass: 0.4, hp: 9, r: 7, speed: 130, dmg: 6, armor: 0, col: '#d982f5',
+    cost: 2, minWave: 3, shape: 'virus', goal: 'rbc', evade: true, invade: true, life: 20,
+    threat: 'PARASITAEMIA',
+  },
+  staph: {
+    name: 'Staphylococcus aureus', sci: 'α-haemolysin · pore-forming',
+    mass: 3.4, hp: 50, r: 16, speed: 74, dmg: 18, armor: 7, col: '#e0c65a',
+    cost: 3, minWave: 4, shape: 'sphere', capsule: true, goal: 'rbc', rbcDps: 17,
+    pore: true, threat: 'PORE-FORMING TOXIN',
+  },
+  pseudomonas: {
+    name: 'Pseudomonas', sci: 'Type III secretion system',
+    mass: 6.5, hp: 88, r: 19, speed: 118, dmg: 16, armor: 4, col: '#5ad9c8',
+    cost: 4, minWave: 6, shape: 'spiral', goal: 'swarm', dart: true, tether: true,
+    threat: 'T3SS INJECTORS',
+  },
+  clostridium: {
+    name: 'Clostridium', sci: 'α-toxin · phospholipase C',
+    mass: 5.2, hp: 96, r: 17, speed: 58, dmg: 19, armor: 6, col: '#c98a3a',
+    cost: 4, minWave: 6, shape: 'rod', goal: 'wall', wallDps: 15, liquefy: true,
+    threat: 'TISSUE LIQUEFACTION',
+  },
+  aspergillus: {
+    name: 'Aspergillus', sci: 'Hyphal mat · vascular occlusion',
+    mass: 9, hp: 150, r: 25, speed: 40, dmg: 24, armor: 9, col: '#e08a4a',
+    cost: 6, minWave: 8, shape: 'spore', capsule: true, goal: 'mat', matBuilder: true,
+    threat: 'MYCELIAL OCCLUSION',
+  },
+  biofilm: {
+    name: 'Biofilm Colony', sci: 'Gram-negative · LPS endotoxin',
+    mass: 15, hp: 300, r: 38, speed: 44, dmg: 26, armor: 10, col: '#c05ae0',
+    cost: 10, minWave: 9, shape: 'colony', goal: 'rbc', rbcDps: 26,
+    elite: true, spawner: true, endotoxin: true,
+    threat: 'ENDOTOXIC COLONY',
+  },
+};
+
+/* ------------------------------------------------------ 4. UPGRADE TREE */
+const BR = {
+  stem: { name: 'Stem Cell Core', ac: '#7fe3ff', gl: '#2ea6e055', glyph: '✲' },
+  neu:  { name: 'Neutrophil',     ac: '#ffb45e', gl: '#ff8a2e55', glyph: '✦' },
+  mac:  { name: 'Macrophage',     ac: '#8affa0', gl: '#3fd06055', glyph: '◉' },
+  tcl:  { name: 'T-Lymphocyte',   ac: '#c39bff', gl: '#8a5cff55', glyph: '⬡' },
+};
+
+const UPGRADES = [
+  { id: 'mitosis', br: 'stem', tier: 0, max: 5, name: 'Mitosis Rate',
+    ds: 'Marrow output rises. <b>+5 max nodes</b> and fallen cells regenerate <b>40% faster</b> per rank.' },
+  { id: 'chemo', br: 'stem', tier: 0, max: 5, name: 'Chemotactic Sensitivity',
+    ds: 'Sharper gradient reading. <b>+9% glide speed</b> and quicker response to the beacon per rank.' },
+  { id: 'elastic', br: 'stem', tier: 0, max: 5, name: 'Membrane Elasticity',
+    ds: 'Deformable cytoskeleton. <b>+22% node integrity</b> and tighter packing without scattering.' },
+
+  { id: 'marginate', br: 'neu', tier: 1, max: 2, name: 'Marginate',
+    ds: 'Cells roll along healthy endothelium. <b>+25% speed</b> beside an intact vessel wall — liquefied sections give no grip.' },
+  { id: 'granule', br: 'neu', tier: 1, max: 3, name: 'Granule Vent',
+    ds: 'Leaking enzymes scald anything near the swarm. <b>11 burn damage/sec</b> in aura range, and it <b>eats fungal mats</b>.' },
+  { id: 'superoxide', br: 'neu', tier: 2, max: 3, name: 'Superoxide Spray',
+    ds: 'Unlocks <kbd>F</kbd>. Vents H₂O₂ in a forward cone: heavy damage and <b>strips capsules</b>.' },
+  { id: 'degran', br: 'neu', tier: 2, max: 3, name: 'Degranulation Shock',
+    ds: 'Every successful engulfment detonates an enzymatic shockwave that damages and staggers neighbours.' },
+  { id: 'netosis', br: 'neu', tier: 3, max: 1, key: true, name: 'NETosis',
+    ds: 'KEYSTONE — a dying node ruptures into a web of chromatin fibres, <b>rooting pathogens for 4s</b> under heavy acid burn.' },
+
+  { id: 'deep', br: 'mac', tier: 1, max: 3, name: 'Deep Ingestion',
+    ds: 'Larger phagosome. <b>+50% absorbable mass</b> per node, so fewer cells are needed to encircle big prey.' },
+  { id: 'chitin', br: 'mac', tier: 1, max: 2, name: 'Chitinase Breakdown',
+    ds: '<b>Digestion 30% faster</b> per rank, and metabolised matter <b>repairs the digesting node</b>.' },
+  { id: 'm1', br: 'mac', tier: 2, max: 1, name: 'M1 Inflammatory Stance',
+    ds: 'Unlocks a <kbd>C</kbd> stance: <b>+20% resistance</b> and heavy collision knockback, at <b>−20% drift speed</b>.' },
+  { id: 'm2', br: 'mac', tier: 2, max: 1, name: 'M2 Resolving Stance',
+    ds: 'Unlocks a <kbd>C</kbd> stance: <b>+40% resistance</b>, an aura that regenerates nearby nodes, and <b>faster host repair</b>.' },
+  { id: 'titan', br: 'mac', tier: 3, max: 1, key: true, name: 'Giant Cell Fusion',
+    ds: 'KEYSTONE — <kbd>R</kbd> fuses 10 nodes into a <b>multinucleated titan</b>: CC-immune, vacuums pathogens into a crushing digestive vortex and tears through fungal mats.' },
+
+  { id: 'receptor', br: 'tcl', tier: 1, max: 2, name: 'Receptor Affinity',
+    ds: 'Opsonised targets become priority prey — nodes gain <b>35% homing</b> toward anything tagged.' },
+  { id: 'perforin', br: 'tcl', tier: 1, max: 2, name: 'Perforin Needle',
+    ds: 'Collisions punch pores: <b>+3 contact damage</b> and <b>bypass 50% of armour</b> per rank.' },
+  { id: 'interleukin', br: 'tcl', tier: 2, max: 1, name: 'Interleukin Cascade',
+    ds: 'Tagging an elite broadcasts a cytokine beacon: <b>+20% damage and devour speed</b> swarm-wide for 8s.' },
+  { id: 'memory', br: 'tcl', tier: 2, max: 3, name: 'Memory Protocol',
+    ds: 'Killing 5 of a species imprints it: permanent <b>+15% damage against that species</b> for the rest of the run.' },
+  { id: 'granzyme', br: 'tcl', tier: 3, max: 1, key: true, name: 'Granzyme Death Sentence',
+    ds: 'KEYSTONE — <kbd>T</kbd> injects apoptotic enzymes into the biggest nearby threat, or <b>clears a parasitised erythrocyte</b> before it bursts. After 3s the target self-destructs, detonating every tagged pathogen in the blast.' },
+];
+const UP_BY_ID = {};
+UPGRADES.forEach(u => UP_BY_ID[u.id] = u);
+
+/* ------------------------------------------------- 4b. HYBRID SYNERGIES
+   Emergent properties of a multi-class build, not something you pick. Each
+   one needs real investment in two lineages, and switches itself on the
+   moment the requirement is met. */
+const SYNERGIES = [
+  { id: 'feast', name: 'Opsonin Feast', pair: 'Neutrophil + Macrophage',
+    a: 'neu', b: 'mac', glyph: '✦◉',
+    need: 'NETosis + 3 Macrophage ranks',
+    ds: 'Anything pinned in a chromatin web yields <b>double biomass</b> and digests with <b>no speed penalty</b>.',
+    req: () => (G.up['netosis'] || 0) > 0 && branchPicks('mac') >= 3 },
+  { id: 'present', name: 'Antigen Presentation', pair: 'Macrophage + T-Lymphocyte',
+    a: 'mac', b: 'tcl', glyph: '◉⬡',
+    need: '3 Macrophage + 3 T-Lymphocyte ranks',
+    ds: 'Finishing digestion of a heavyweight displays its antigen — <b>×2.2 damage against that species</b> swarm-wide for 22s.',
+    req: () => branchPicks('mac') >= 3 && branchPicks('tcl') >= 3 },
+  { id: 'lysis', name: 'Targeted Lysis Shock', pair: 'Neutrophil + T-Lymphocyte',
+    a: 'neu', b: 'tcl', glyph: '✦⬡',
+    need: 'NETosis + Granzyme Death Sentence',
+    ds: 'Every apoptotic detonation seeds a <b>mini-NET trap</b> on each collateral target caught in the blast.',
+    req: () => (G.up['netosis'] || 0) > 0 && (G.up['granzyme'] || 0) > 0 },
+];
+function checkSynergies() {
+  for (const s of SYNERGIES) {
+    if (!G.syn[s.id] && s.req()) { G.syn[s.id] = true; announceSynergy(s); }
+  }
+}
+/* Which synergies would light up if this upgrade were taken right now? */
+function synergiesGainedBy(id) {
+  const before = SYNERGIES.filter(s => s.req()).map(s => s.id);
+  G.up[id] = (G.up[id] || 0) + 1;
+  const after = SYNERGIES.filter(s => s.req()).map(s => s.id);
+  G.up[id]--; if (!G.up[id]) delete G.up[id];
+  return SYNERGIES.filter(s => after.includes(s.id) && !before.includes(s.id));
+}
+
+function branchPicks(br) {
+  let c = 0;
+  for (const u of UPGRADES) if (u.br === br) c += (G.up[u.id] || 0);
+  return c;
+}
+function upgradeAvailable(u) {
+  if ((G.up[u.id] || 0) >= u.max) return false;
+  if (u.tier === 2 && branchPicks(u.br) < 2) return false;
+  if (u.tier === 3 && branchPicks(u.br) < 4) return false;
+  return true;
+}
+function takeUpgrade(id) {
+  G.up[id] = (G.up[id] || 0) + 1;
+  G.order.push(id);
+  const u = UP_BY_ID[id];
+  if (id === 'm1' && !G.stance) G.stance = 'M1';
+  if (id === 'm2' && !G.stance) G.stance = 'M2';
+  if (id === 'mitosis') for (let i = 0; i < 3; i++) spawnNode();
+  recalc();
+  for (const nd of G.nodes) { nd.maxHp = Math.max(nd.maxHp, S.nodeHp); nd.hp = Math.min(nd.maxHp, nd.hp + 8); }
+  buildAbilityBar();
+  toast(u.name.toUpperCase() + ' ACQUIRED');
+  checkSynergies();
+}
+
+/* ================================================== 5. ENTITY FACTORIES */
+function spawnNode(x, y) {
+  if (G.nodes.length >= S.maxNodes) return null;
+  const c = swarmCenter();
+  const a = rand(0, TAU), d = rand(20, 70);
+  const nd = {
+    x: x !== undefined ? x : c.x + Math.cos(a) * d,
+    y: y !== undefined ? y : c.y + Math.sin(a) * d,
+    vx: 0, vy: 0, hp: S.nodeHp, maxHp: S.nodeHp, r: 10.5,
+    ph: rand(0, TAU), orbit: Math.random(), wob: rand(.8, 1.4),
+    dig: null, hit: 0, born: 0, inj: 0,
+  };
+  G.nodes.push(nd);
+  return nd;
+}
+
+function spawnPathogen(key, x, y) {
+  const def = PATHO[key];
+  const scale = 1 + Math.max(0, G.wave - 1) * 0.075;
+  const p = {
+    k: key, def,
+    x, y, vx: 0, vy: 0,
+    maxHp: def.hp * scale, hp: def.hp * scale,
+    mass: def.mass, r: def.r, armor: def.armor,
+    capsule: !!def.capsule, elite: !!def.elite,
+    ops: 0, agg: 0, root: 0, stag: 0, eng: 0, enraged: false,
+    ang: rand(0, TAU), seed: rand(0, 100), wob: rand(.7, 1.5),
+    dartT: rand(1, 3), hit: 0, doom: 0, life: def.life || 0,
+    tgt: null, retgt: 0, fireT: rand(1, 2.5), tether: null, rooted: null, mat: null,
+    venting: 0,
+  };
+  G.paths.push(p);
+  return p;
+}
+
+function spawnRbc(x, y) {
+  G.rbcs.push({
+    x: x !== undefined ? x : rand(40, ARENA.w - 40),
+    y: y !== undefined ? y : rand(40, ARENA.h - 40),
+    vx: rand(-9, 9), vy: rand(-9, 9), r: rand(13, 20),
+    ang: rand(0, TAU), spin: rand(-.5, .5),
+    hp: 72, maxHp: 72, inf: null, hit: 0,
+  });
+}
+
+function pop(x, y, txt, col, sz) {
+  G.pops.push({ x, y, txt, col: col || '#cfe9ff', t: 0, dur: 1.0, sz: sz || 12, vy: -34 });
+}
+function zone(kind, x, y, r, dur, dps, col) {
+  G.fx.push({ kind, x, y, r, r0: r, t: 0, dur, dps: dps || 0, col: col || '#9effc0' });
+}
+function shake(v) { G.cam.shake = Math.min(26, G.cam.shake + v); }
+function burst(x, y, col, sp) {
+  const a = rand(0, TAU), s = rand(sp * 0.3, sp);
+  G.pops.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, col, t: 0, dur: rand(.3, .7), part: true, r: rand(1.5, 4) });
+}
+
+function swarmCenter() {
+  if (G.titan) return { x: G.titan.x, y: G.titan.y };
+  if (!G.nodes.length) return { x: G.beacon.x, y: G.beacon.y };
+  let x = 0, y = 0;
+  for (const n of G.nodes) { x += n.x; y += n.y; }
+  return { x: x / G.nodes.length, y: y / G.nodes.length };
+}
+function swarmHp() {
+  let hp = 0, mx = 0;
+  for (const n of G.nodes) { hp += n.hp; mx += n.maxHp; }
+  if (G.titan) { hp += G.titan.hp; mx += G.titan.maxHp; }
+  return mx > 0 ? hp / mx : 0;
+}
+
+/* --------------------------------------------------- THE ENDOTHELIUM */
+function initWall() {
+  G.wall = [];
+  const seg = (x1, y1, x2, y2, side) => G.wall.push({
+    x1, y1, x2, y2, mx: (x1 + x2) / 2, my: (y1 + y2) / 2, hp: 100, maxHp: 100, side,
+  });
+  const stepX = ARENA.w / 12, stepY = ARENA.h / 9;
+  for (let i = 0; i < 12; i++) {
+    seg(i * stepX, 0, (i + 1) * stepX, 0, 'top');
+    seg(i * stepX, ARENA.h, (i + 1) * stepX, ARENA.h, 'bottom');
+  }
+  for (let i = 0; i < 9; i++) {
+    seg(0, i * stepY, 0, (i + 1) * stepY, 'left');
+    seg(ARENA.w, i * stepY, ARENA.w, (i + 1) * stepY, 'right');
+  }
+  G.breaches = 0;
+}
+function nearestSeg(x, y) {
+  let best = null, bd = 1e12;
+  for (const s of G.wall) {
+    const d = d2(x, y, s.mx, s.my);
+    if (d < bd) { bd = d; best = s; }
+  }
+  return best;
+}
+function updateWall(dt) {
+  let br = 0;
+  const resolving = G.waveState === 'idle';
+  for (const s of G.wall) {
+    if (s.hp <= 0) br++;
+    else if (s.hp < s.maxHp) s.hp = Math.min(s.maxHp, s.hp + (resolving ? 9 : 6) * dt);
+    /* Leukocytes parked on a wound accelerate re-endothelialisation, so
+       defending a breach is an action the player can actually take. */
+    if (s.hp < s.maxHp) {
+      let near = 0;
+      for (const n of G.nodes) { if (d2(n.x, n.y, s.mx, s.my) < 150 * 150) { near++; if (near >= 6) break; } }
+      if (near) s.hp = Math.min(s.maxHp, s.hp + near * 2.2 * dt);
+    }
+  }
+  G.breaches = br;
+  /* Sub-linear: a couple of breaches is a warning, twenty is not twenty times
+     worse. Linear drain here was an unrecoverable runaway. */
+  if (br) {
+    const d = 0.09 * Math.pow(br, 0.75) * dt;
+    hostDamage(d); G.tel.wallHost += d;
+  }
+  if (resolving) {                                  /* re-endothelialisation */
+    for (const s of G.wall) if (s.hp <= 0) s.hp = 6;
+  }
+}
+
+/* ------------------------------------------------------ ERYTHROCYTES */
+function updateRbcs(dt) {
+  const resolving = G.waveState === 'idle';
+  G.rbcTimer -= dt;
+  if (G.rbcTimer <= 0 && G.rbcs.length < RBC_CAP) {
+    G.rbcTimer = resolving ? 0.35 : 1.5;            /* erythropoiesis */
+    spawnRbc();
+  }
+  for (let i = G.rbcs.length - 1; i >= 0; i--) {
+    const e = G.rbcs[i];
+    e.x += e.vx * dt; e.y += e.vy * dt; e.ang += e.spin * dt;
+    e.hit = Math.max(0, e.hit - dt * 3);
+    if (e.x < -40) e.x = ARENA.w + 40; if (e.x > ARENA.w + 40) e.x = -40;
+    if (e.y < -40) e.y = ARENA.h + 40; if (e.y > ARENA.h + 40) e.y = -40;
+
+    /* parasitised: the merozoite is replicating inside */
+    if (e.inf) {
+      e.inf.t += dt;
+      if (e.inf.t >= e.inf.dur) { lyse(i, 'burst'); continue; }
+    }
+    /* leukocytes shoulder red cells aside, and clear parasitised ones */
+    for (const n of G.nodes) {
+      const dx = e.x - n.x, dy = e.y - n.y, dd = dx * dx + dy * dy;
+      const rr = e.r + n.r + 4;
+      if (dd < rr * rr && dd > 1) {
+        const d = Math.sqrt(dd);
+        e.x += (dx / d) * (rr - d) * 0.5; e.y += (dy / d) * (rr - d) * 0.5;
+        if (e.inf) { e.hp -= 78 * dt; e.hit = 1; }   /* CD8-style collateral clearance */
+      }
+    }
+    if (e.hp <= 0) lyse(i, e.inf ? 'clear' : 'lysis');
+  }
+  G.oxy = clamp(G.rbcs.length / (RBC_CAP * 0.62), 0.55, 1);
+}
+
+function lyse(i, mode) {
+  const e = G.rbcs[i];
+  G.rbcs.splice(i, 1);
+  for (let k = 0; k < 7; k++) burst(e.x, e.y, '#c2394f', 130);
+  if (mode === 'burst') {
+    /* synchronised rupture — daughter merozoites flood out */
+    hostDamage(0.24, e.x, e.y - 12, 'RUPTURE'); G.tel.burst++;
+    /* Parasitaemia has to be able to run away with the host, but not past the
+       point where the swarm can never claw it back. */
+    const alive = G.paths.reduce((a, p) => a + (p.k === 'merozoite' ? 1 : 0), 0);
+    const n = alive < 5 ? 2 : (alive < 12 ? 1 : 0);
+    for (let k = 0; k < n; k++) {
+      const a = rand(0, TAU);
+      spawnPathogen('merozoite', e.x + Math.cos(a) * 22, e.y + Math.sin(a) * 22);
+    }
+    zone('bloom', e.x, e.y, 40, 0.5, 0, '#d982f5');
+    G.lysed++;
+  } else if (mode === 'clear') {
+    hostDamage(0.08, e.x, e.y - 12, 'CLEARED'); G.tel.clear++;
+    pop(e.x, e.y - 26, 'PARASITE DENIED', '#c39bff', 10);
+  } else {
+    hostDamage(0.17, e.x, e.y - 12, 'HAEMOLYSIS'); G.tel.lysis++;
+    G.lysed++;
+  }
+}
+
+function presentAntigen(k, x, y) {
+  G.present = { k, t: 22, dur: 22 };
+  zone('bloom', x, y, 260, 0.8, 0, '#c39bff');
+  zone('bloom', x, y, 150, 0.6, 0, '#8affa0');
+  pop(x, y - 30, 'ANTIGEN PRESENTED', '#c39bff', 13);
+  toast('ANTIGEN PRESENTED — ' + PATHO[k].name.toUpperCase());
+  shake(6);
+}
+
+function inNetWeb(x, y) {
+  for (const z of G.fx) {
+    if (z.kind !== 'net') continue;
+    if (d2(x, y, z.x, z.y) < z.r * z.r) return true;
+  }
+  return false;
+}
+
+/* ------------------------------------------------------ FUNGAL MATS */
+function updateMats(dt) {
+  for (let i = G.mats.length - 1; i >= 0; i--) {
+    const m = G.mats[i];
+    m.t += dt;
+    if (m.host && m.host.hp > 0) m.r = Math.min(m.maxR, m.r + 8 * dt);
+    hostDamage(0.15 * dt); G.tel.matHost += 0.15 * dt;
+    /* leukocyte enzymes chew through the mycelium */
+    let chew = 0;
+    for (const n of G.nodes) {
+      const rr = m.r + n.r;
+      if (d2(n.x, n.y, m.x, m.y) < rr * rr) chew++;
+    }
+    if (chew) m.hp -= (S.contact * 0.9 + S.burn * 0.7) * (1 + 0.15 * (chew - 1)) * chew * dt;
+    if (G.titan) {
+      const rr = m.r + G.titan.r;
+      if (d2(G.titan.x, G.titan.y, m.x, m.y) < rr * rr) m.hp -= 180 * dt;
+    }
+    if (m.hp <= 0) {
+      for (let k = 0; k < 14; k++) burst(m.x, m.y, '#e08a4a', 170);
+      pop(m.x, m.y, 'MAT CLEARED', '#ffcf9a', 12);
+      addBiomass(40);
+      if (m.host) m.host.mat = null;
+      G.mats.splice(i, 1);
+    }
+  }
+}
+
+/* ===================================================== 6. SIMULATION */
+const FORM_R = [50, 145, 300];
+
+function updateSwarm(dt) {
+  const targetR = FORM_R[G.form];
+  G.formLerp = lerp(G.formLerp, targetR, 1 - Math.exp(-7 * dt));
+  const R = G.formLerp;
+  if (G.mitosisBlock > 0) G.mitosisBlock -= dt;
+
+  let tag = null, tagD = 460 * 460;
+  if (S.homing > 0) {
+    for (const p of G.paths) {
+      if (p.ops <= 0) continue;
+      const dd = d2(p.x, p.y, G.beacon.x, G.beacon.y);
+      if (dd < tagD) { tagD = dd; tag = p; }
+    }
+  }
+
+  for (let i = G.nodes.length - 1; i >= 0; i--) {
+    const n = G.nodes[i];
+    n.born += dt; n.ph += dt * 2.2 * n.wob; n.hit = Math.max(0, n.hit - dt * 3);
+    if (n.inj > 0) n.inj -= dt;
+
+    let dx = G.beacon.x - n.x, dy = G.beacon.y - n.y;
+    const d = len(dx, dy) || 1;
+    const want = R * (0.28 + 0.72 * n.orbit);
+    let spd = S.speed * clamp((d - want) / 85, -0.8, 1);
+    if (n.dig) spd *= n.dig.feast ? 1 : 0.58;   /* Opsonin Feast: no drag */
+    if (S.marginate > 0 && nearWall(n.x, n.y, 100)) {
+      const s = nearestSeg(n.x, n.y);
+      if (s && s.hp > 40) spd *= 1 + S.marginate;    /* no grip on liquefied wall */
+    }
+    let tvx = (dx / d) * spd, tvy = (dy / d) * spd;
+
+    if (tag) {
+      const hx = tag.x - n.x, hy = tag.y - n.y, hd = len(hx, hy) || 1;
+      tvx = lerp(tvx, (hx / hd) * S.speed, S.homing * 0.6);
+      tvy = lerp(tvy, (hy / hd) * S.speed, S.homing * 0.6);
+    }
+    /* Opportunistic lunge — but only at prey the swarm could plausibly take.
+       Without this check the nodes suicide into biofilms and capsuled species. */
+    let near = null, nd2 = 150 * 150;
+    const bite = S.engulf * Math.min(8, Math.max(3, G.nodes.length * 0.4));
+    for (const p of G.paths) {
+      if (p.capsule && p.ops <= 0) continue;
+      if (effMass(p) > bite && p.ops <= 0) continue;
+      const dd = d2(p.x, p.y, n.x, n.y);
+      if (dd < nd2) { nd2 = dd; near = p; }
+    }
+    if (near && !n.dig) {
+      const hx = near.x - n.x, hy = near.y - n.y, hd = len(hx, hy) || 1;
+      tvx = lerp(tvx, (hx / hd) * S.speed, 0.4);
+      tvy = lerp(tvy, (hy / hd) * S.speed, 0.4);
+    }
+
+    const k = 1 - Math.exp(-S.accel * dt);
+    n.vx = lerp(n.vx, tvx, k);
+    n.vy = lerp(n.vy, tvy, k);
+
+    if (n.dig) {
+      const g = n.dig;
+      const step = dt * S.devourMult * (g.ops ? 2 : 1);
+      g.t += step;
+      addBiomass(g.yield * Math.min(step, Math.max(0, g.dur - (g.t - step))) / g.dur);
+      if ((G.up['chitin'] || 0) > 0) n.hp = Math.min(n.maxHp, n.hp + 5 * dt);
+      if (g.t >= g.dur) {
+        pop(n.x, n.y - 12, '+' + Math.round(g.yield), '#8fe9ff', 12);
+        /* Antigen Presentation: the macrophage displays what it just broke down */
+        if (G.syn['present'] && (g.elite || g.mass >= 5)) presentAntigen(g.k, n.x, n.y);
+        n.dig = null;
+        n.hp = Math.min(n.maxHp, n.hp + 4);
+      }
+    }
+    if (S.regenAura > 0) n.hp = Math.min(n.maxHp, n.hp + S.regenAura * dt * 0.5);
+
+    n.x += n.vx * dt; n.y += n.vy * dt;
+    /* mycelial mats physically occlude the lumen */
+    for (const m of G.mats) {
+      const rr = m.r + n.r;
+      const dd = d2(n.x, n.y, m.x, m.y);
+      if (dd < rr * rr && dd > 1) {
+        const dist = Math.sqrt(dd), ux = (n.x - m.x) / dist, uy = (n.y - m.y) / dist;
+        n.x = m.x + ux * rr; n.y = m.y + uy * rr;
+        n.vx *= 0.72; n.vy *= 0.72;
+      }
+    }
+    bounds(n, 8);
+    if (n.hp <= 0) killNode(i);
+  }
+
+  /* separation (soft body packing) */
+  const nn = G.nodes.length;
+  for (let i = 0; i < nn; i++) {
+    const a = G.nodes[i];
+    for (let j = i + 1; j < nn; j++) {
+      const b = G.nodes[j];
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const rr = (a.r + b.r) * 1.15;
+      const dd = dx * dx + dy * dy;
+      if (dd > rr * rr || dd < 0.0001) continue;
+      const dist = Math.sqrt(dd);
+      const push = (rr - dist) * 0.5 * S.sep;
+      const ux = dx / dist, uy = dy / dist;
+      a.x -= ux * push; a.y -= uy * push;
+      b.x += ux * push; b.y += uy * push;
+    }
+  }
+
+  /* mitosis — suppressed while a T3SS needle is in the swarm */
+  /* T3SS injectors slow the marrow signal rather than silencing it outright */
+  const depleted = 1 - G.nodes.length / Math.max(1, S.maxNodes);
+  G.mitosisT += dt * (G.mitosisBlock > 0 ? 0.35 : 1) * (1 + 2.2 * depleted);
+  if (G.mitosisT >= S.mitosisTime) {
+    G.mitosisT = 0;
+    if (G.nodes.length < S.maxNodes) {
+      const nd = spawnNode();
+      if (nd) { nd.hp = nd.maxHp * 0.6; zone('bloom', nd.x, nd.y, 16, 0.5, 0, '#9fe8ff'); }
+    }
+  }
+}
+
+function nearWall(x, y, m) {
+  return x < m || y < m || x > ARENA.w - m || y > ARENA.h - m;
+}
+function bounds(e, pad) {
+  const p = pad || e.r;
+  if (e.x < p) { e.x = p; e.vx = Math.abs(e.vx) * 0.5; }
+  if (e.y < p) { e.y = p; e.vy = Math.abs(e.vy) * 0.5; }
+  if (e.x > ARENA.w - p) { e.x = ARENA.w - p; e.vx = -Math.abs(e.vx) * 0.5; }
+  if (e.y > ARENA.h - p) { e.y = ARENA.h - p; e.vy = -Math.abs(e.vy) * 0.5; }
+}
+
+function killNode(i) {
+  const n = G.nodes[i];
+  G.nodes.splice(i, 1);
+  for (let k = 0; k < 7; k++) burst(n.x, n.y, '#bfe9ff', 90);
+  for (const p of G.paths) if (p.tether === n) p.tether = null;
+  if (n.dig) {
+    const p = spawnPathogen(n.dig.k, n.x, n.y);
+    p.enraged = true; p.hp = p.maxHp * 0.6;
+  }
+  if ((G.up['netosis'] || 0) > 0) { zone('net', n.x, n.y, 78, 4, 24, '#e8f4ff'); shake(3); }
+}
+function cullNodes() {
+  for (let i = G.nodes.length - 1; i >= 0; i--) if (G.nodes[i].hp <= 0) killNode(i);
+}
+
+/* ------------------------------------------------------ PATHOGEN AI */
+/* Nothing here steers toward the swarm unless the species' goal says so. */
+function acquireTarget(p) {
+  const def = p.def;
+  p.retgt = rand(0.5, 1.1);
+  if (def.goal === 'rbc') {
+    let best = null, bd = 1e12;
+    for (const e of G.rbcs) {
+      if (def.invade && e.inf) continue;             /* already parasitised */
+      const d = d2(p.x, p.y, e.x, e.y);
+      if (d < bd) { bd = d; best = e; }
+    }
+    p.tgt = best ? { kind: 'rbc', ref: best } : null;
+  } else if (def.goal === 'wall') {
+    let best = null, bd = 1e12;
+    for (const s of G.wall) {
+      if (s.hp <= 0) continue;
+      const d = d2(p.x, p.y, s.mx, s.my);
+      if (d < bd) { bd = d; best = s; }
+    }
+    p.tgt = best ? { kind: 'wall', ref: best } : null;
+  } else if (def.goal === 'swarm') {
+    let best = null, bd = 1e12;
+    for (const n of G.nodes) {
+      const d = d2(p.x, p.y, n.x, n.y);
+      if (d < bd) { bd = d; best = n; }
+    }
+    p.tgt = best ? { kind: 'node', ref: best } : null;
+  } else if (def.goal === 'mat') {
+    if (!p.tgt || p.tgt.kind !== 'point') {
+      /* settle somewhere central where it will block the most flow */
+      p.tgt = { kind: 'point', x: clamp(p.x + rand(-500, 500), 300, ARENA.w - 300),
+        y: clamp(p.y + rand(-500, 500), 300, ARENA.h - 300) };
+    }
+  }
+}
+
+function updatePathogens(dt) {
+  for (let i = G.paths.length - 1; i >= 0; i--) {
+    const p = G.paths[i];
+    const def = p.def;
+    p.ang += dt * 1.7 * p.wob;
+    p.hit = Math.max(0, p.hit - dt * 3);
+    if (p.ops > 0) { p.ops -= dt; if (p.ops <= 0) p.ops = 0; }
+    if (p.agg > 0) p.agg -= dt;
+    if (p.root > 0) p.root -= dt;
+    if (p.stag > 0) p.stag -= dt;
+    p.retgt -= dt;
+    /* A merozoite that fails to find a host cell perishes — this is what keeps
+       parasitaemia from being a permanently self-sustaining population. */
+    if (p.life > 0) {
+      p.life -= dt;
+      if (p.life <= 0) {
+        for (let k = 0; k < 4; k++) burst(p.x, p.y, p.def.col, 70);
+        pop(p.x, p.y, 'PERISHED', '#b07acc', 10);
+        G.paths.splice(i, 1);
+        continue;
+      }
+    }
+
+    /* endotoxic enrage — a wounded Gram-negative colony vents LPS */
+    if (def.endotoxin && p.hp < p.maxHp * 0.45) {
+      p.enraged = true;
+      p.venting -= dt;
+      if (p.venting <= 0) {
+        p.venting = 3.6;
+        zone('toxin', p.x + rand(-60, 60), p.y + rand(-60, 60), 130, 5, 11, '#c05ae0');
+      }
+    }
+
+    /* ---- target acquisition ---- */
+    const tgtDead = !p.tgt ||
+      (p.tgt.kind === 'rbc' && (p.tgt.ref.hp <= 0 || G.rbcs.indexOf(p.tgt.ref) < 0)) ||
+      (p.tgt.kind === 'wall' && p.tgt.ref.hp <= 0) ||
+      (p.tgt.kind === 'node' && (p.tgt.ref.hp <= 0 || G.nodes.indexOf(p.tgt.ref) < 0));
+    if (p.retgt <= 0 || tgtDead) acquireTarget(p);
+
+    let tx = p.x, ty = p.y, atTarget = false;
+    if (p.tgt) {
+      const r = p.tgt.ref;
+      tx = p.tgt.kind === 'point' ? p.tgt.x : (p.tgt.kind === 'wall' ? r.mx : r.x);
+      ty = p.tgt.kind === 'point' ? p.tgt.y : (p.tgt.kind === 'wall' ? r.my : r.y);
+    } else { tx = ARENA.w / 2; ty = ARENA.h / 2; }
+
+    let spd = def.speed * (1 + (G.wave - 1) * 0.012);
+    if (p.enraged) spd *= 1.35;
+    if (p.root > 0) spd = 0;
+    if (p.stag > 0) spd *= 0.25;
+    if (p.eng > 0.05) spd *= 0.35;
+    if (p.agg > 0) {
+      spd *= 0.55;                                /* cross-linked: base drag */
+      let cl = 0;
+      for (const q of G.paths) if (q !== p && q.agg > 0 && d2(q.x, q.y, p.x, p.y) < 105 * 105) cl++;
+      spd /= (1 + 0.45 * Math.min(cl, 6));
+      for (const q of G.paths) {
+        if (q === p || q.agg <= 0) continue;
+        const dx = q.x - p.x, dy = q.y - p.y, dd = len(dx, dy);
+        if (dd > 40 && dd < 105) { p.vx += (dx / dd) * 26 * dt; p.vy += (dy / dd) * 26 * dt; }
+      }
+    }
+
+    let dx = tx - p.x, dy = ty - p.y; const d = len(dx, dy) || 1;
+    let sx = dx / d, sy = dy / d;
+
+    /* ---- evasion: fast parasites dodge leukocytes rather than engage ---- */
+    if (def.evade) {
+      for (const n of G.nodes) {
+        const dd = d2(n.x, n.y, p.x, p.y);
+        if (dd < 95 * 95) {
+          const ex = p.x - n.x, ey = p.y - n.y, ed = Math.sqrt(dd) || 1;
+          sx += (ex / ed) * 1.0; sy += (ey / ed) * 1.0;
+        }
+      }
+      const sl = len(sx, sy) || 1; sx /= sl; sy /= sl;
+      const w = Math.sin(p.seed + G.t * 5) * 0.5;
+      const px = -sy, py = sx;
+      sx += px * w; sy += py * w;
+    }
+    if (def.dart) {
+      p.dartT -= dt;
+      if (p.dartT <= 0) { p.dartT = rand(1.6, 3.2); p.vx += sx * 330; p.vy += sy * 330; }
+    }
+    if (p.rooted) { spd = 0; }
+
+    const k = 1 - Math.exp(-3.2 * dt);
+    p.vx = lerp(p.vx, sx * spd, k);
+    p.vy = lerp(p.vy, sy * spd, k);
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    bounds(p, p.r);
+
+    /* ---- carry out the species objective ---- */
+    if (p.tgt && p.tgt.kind === 'rbc') {
+      const e = p.tgt.ref, rr = p.r + e.r + 4;
+      if (d2(p.x, p.y, e.x, e.y) < rr * rr) {
+        atTarget = true;
+        if (def.invade) {
+          if (!e.inf) {
+            e.inf = { t: 0, dur: 12 };
+            pop(e.x, e.y - e.r - 8, 'INVADED', '#d982f5', 10);
+            for (let k2 = 0; k2 < 5; k2++) burst(p.x, p.y, '#d982f5', 90);
+            G.paths.splice(i, 1);
+            continue;
+          }
+        } else {
+          e.hp -= def.rbcDps * dt * (p.enraged ? 1.4 : 1);
+          e.hit = 1;
+        }
+      }
+    } else if (p.tgt && p.tgt.kind === 'wall') {
+      const s = p.tgt.ref;
+      if (d2(p.x, p.y, s.mx, s.my) < 70 * 70) {
+        atTarget = true;
+        s.hp -= def.wallDps * dt;
+        hostDamage(0.05 * dt);
+        /* Necrotic terrain is meant to stop the wall closing, not to be a
+           leukocyte shredder. Un-capped it stacked to ~36 dps and accounted for
+           three quarters of all node deaths. */
+        if (def.liquefy && Math.random() < dt * 0.3) {
+          const nx = s.mx + rand(-40, 40), ny = s.my + rand(-40, 40);
+          let overlap = false;
+          for (const z of G.fx) {
+            if (z.kind === 'necrosis' && d2(z.x, z.y, nx, ny) < 70 * 70) { overlap = true; break; }
+          }
+          if (!overlap) zone('necrosis', nx, ny, 80, 5, 4, '#c98a3a');
+        }
+      }
+    } else if (def.matBuilder) {
+      const dd = d2(p.x, p.y, tx, ty);
+      if (dd < 40 * 40 || p.rooted) {
+        atTarget = true;
+        if (!p.rooted) {
+          p.rooted = true;
+          const m = { x: p.x, y: p.y, r: 26, maxR: 130, hp: 190, maxHp: 190, t: 0, host: p };
+          G.mats.push(m); p.mat = m;
+          toast('MYCELIAL MAT SEEDED');
+        }
+      }
+    }
+    /* T3SS: latch a needle onto a leukocyte and suppress the marrow signal */
+    if (def.tether) {
+      if (p.tether && (p.tether.hp <= 0 || d2(p.x, p.y, p.tether.x, p.tether.y) > 240 * 240)) p.tether = null;
+      if (!p.tether && p.tgt && p.tgt.kind === 'node') {
+        const n = p.tgt.ref;
+        if (d2(p.x, p.y, n.x, n.y) < 110 * 110) { p.tether = n; pop(n.x, n.y - 20, 'T3SS LATCHED', '#5ad9c8', 10); }
+      }
+      if (p.tether) {
+        atTarget = true;
+        p.tether.inj = 0.5;
+        p.tether.hp -= 6 * dt * (1 - S.dmgRes);
+        G.mitosisBlock = 0.6;
+        if (G.biomass > 0) G.biomass = Math.max(0, G.biomass - 4 * dt);
+        p.vx *= 0.86; p.vy *= 0.86;
+      }
+    }
+    /* α-haemolysin: ranged pores that permanently shrink node capacity */
+    if (def.pore) {
+      p.fireT -= dt;
+      if (p.fireT <= 0) {
+        let n = null, bd = 340 * 340;
+        for (const q of G.nodes) { const dd = d2(q.x, q.y, p.x, p.y); if (dd < bd) { bd = dd; n = q; } }
+        if (n) {
+          p.fireT = 2.6;
+          const a = Math.atan2(n.y - p.y, n.x - p.x);
+          G.projs.push({ kind: 'pore', x: p.x, y: p.y, vx: Math.cos(a) * 300, vy: Math.sin(a) * 300,
+            life: 2.2, r: 6, col: '#ffe08a' });
+        } else p.fireT = 1.2;
+      }
+    }
+    p.busy = atTarget;
+    if (p.hp <= 0) destroyPathogen(i, false);
+  }
+}
+
+/* ------------------------------------------- CONTACT / PHAGOCYTOSIS */
+function effMass(p) {
+  return p.mass * (0.35 + 0.65 * (p.hp / p.maxHp)) * (p.ops > 0 ? 0.6 : 1);
+}
+function armorMul(p) {
+  if (p.ops > 0) return 1;
+  return 1 - clamp((p.armor * (1 - S.pierce)) / 40, 0, 0.7);
+}
+function memMul(p) {
+  const st = G.memory[p.k];
+  let m = 1 + (st && st.bonus ? st.bonus : 0);
+  /* Antigen Presentation: displayed species take critical damage swarm-wide */
+  if (G.present && G.present.k === p.k) m *= 2.2;
+  return m;
+}
+function isPresented(p) { return !!(G.present && G.present.k === p.k); }
+
+function contactPass(dt) {
+  for (let i = G.paths.length - 1; i >= 0; i--) {
+    const p = G.paths[i];
+    const shielded = p.capsule && p.ops <= 0;
+    /* A species with its own objective only lashes out when interfered with. */
+    const retal = p.def.goal === 'swarm' ? 1 : 0.45;
+    let power = 0, touching = [], auraCount = 0;
+
+    for (const n of G.nodes) {
+      const dd2 = d2(p.x, p.y, n.x, n.y);
+      const rr = p.r + n.r + 5;
+      if (dd2 > rr * rr) {
+        /* Pseudopodia reach: a node just outside contact still contributes to
+           the encirclement. Without this, geometry caps engulf power at the
+           ~9 nodes that physically fit around a large target, and nothing big
+           can ever be eaten no matter how large the swarm grows. */
+        const er = rr + 26;
+        if (dd2 < er * er && !n.dig) power += S.engulf * 0.35;
+        const br = p.r + n.r + 22;
+        if (S.burn > 0 && dd2 < br * br) auraCount++;
+        continue;
+      }
+      auraCount++;
+      touching.push(n);
+      const dx = p.x - n.x, dy = p.y - n.y, dd = Math.sqrt(dd2) || 1;
+      const ux = dx / dd, uy = dy / dd;
+
+      if (shielded) {
+        n.hp -= p.def.dmg * 0.7 * dt * (1 - S.dmgRes) * retal;
+        n.hit = 1;
+        n.vx -= ux * 1500 * dt; n.vy -= uy * 1500 * dt;
+        if (n.dig) damageVacuole(n, p.def.dmg * dt * 2.2);
+      } else {
+        if (!n.dig) power += S.engulf;
+        n.hp -= p.def.dmg * (p.enraged ? 1.4 : 1) * 0.5 * dt * (1 - S.dmgRes) * retal;
+        if (n.dig) damageVacuole(n, p.def.dmg * dt * retal);
+        const push = 130 * S.knock * dt;
+        p.vx += ux * push * (14 / p.r); p.vy += uy * push * (14 / p.r);
+        n.vx -= ux * push * 0.8; n.vy -= uy * push * 0.8;
+      }
+    }
+
+    if (touching.length && !shielded) {
+      const nib = S.contact * (1 + 0.18 * (touching.length - 1));
+      p.hp -= nib * dt * armorMul(p) * S.dmgMult * memMul(p);
+      p.hit = Math.max(p.hit, 0.7);
+    }
+    if (S.burn > 0 && auraCount > 0) {
+      p.hp -= S.burn * (1 + 0.14 * (auraCount - 1)) * dt * armorMul(p) * memMul(p);
+      p.hit = Math.max(p.hit, 0.4);
+    }
+
+    if (touching.length && !shielded) {
+      const m = effMass(p);
+      if (power >= m) {
+        const solo = m <= S.engulf;
+        p.eng += dt / (solo ? 0.12 : 0.62);
+        if (p.eng >= 1) { devour(i, touching); continue; }
+        p.gate = null;
+      } else { p.eng = Math.max(0, p.eng - dt * 0.8); p.gate = { need: m, have: power }; }
+    } else { p.eng = Math.max(0, p.eng - dt * 0.8); p.gate = null; }
+
+    if (p.hp <= 0) destroyPathogen(i, false);
+  }
+
+  if (G.titan) {
+    const T = G.titan;
+    for (let i = G.paths.length - 1; i >= 0; i--) {
+      const p = G.paths[i];
+      const dx = T.x - p.x, dy = T.y - p.y, dd = len(dx, dy) || 1;
+      if (dd < 260) {
+        p.vx += (dx / dd) * (1 - dd / 260) * 940 * G.dt;
+        p.vy += (dy / dd) * (1 - dd / 260) * 940 * G.dt;
+      }
+      if (dd < T.r + p.r) {
+        p.hp -= 150 * G.dt * memMul(p);
+        p.capsule = false; p.hit = 1;
+        if (p.hp <= 0 || effMass(p) <= 13) titanDevour(i);
+      }
+    }
+  }
+}
+
+function damageVacuole(n, amt) {
+  if (!n.dig) return;
+  n.dig.integ -= amt;
+  if (n.dig.integ <= 0) {
+    const g = n.dig; n.dig = null;
+    const p = spawnPathogen(g.k, n.x + rand(-14, 14), n.y + rand(-14, 14));
+    p.enraged = true; p.hp = p.maxHp * 0.75;
+    pop(n.x, n.y - 14, 'VACUOLE RUPTURED', '#ff9c6e', 11);
+    n.hp -= 6; shake(4);
+  }
+}
+
+function devour(idx, touching) {
+  const p = G.paths[idx];
+  let host = null;
+  for (const n of touching) if (!n.dig && (!host || n.hp > host.hp)) host = n;
+  if (!host) host = touching[0];
+
+  const m = p.mass;
+  let yield_ = m * 13 + 6;
+  if (p.ops > 0) yield_ *= 1.25;
+  if (p.agg > 0) yield_ *= 1.6;
+  if (p.elite) yield_ *= 2.2;
+  /* Opsonin Feast — prey pinned in a chromatin web is a free, doubled meal */
+  const feast = G.syn['feast'] && (p.root > 0 || inNetWeb(p.x, p.y));
+  if (feast) {
+    yield_ *= 2;
+    pop(p.x, p.y - 30, 'OPSONIN FEAST', '#ffe08a', 12);
+    zone('bloom', p.x, p.y, 70, 0.5, 0, '#ffd76a');
+  }
+
+  /* Pyroptosis: caspase-1 blows the phagocyte apart from the inside — unless
+     antibodies neutralised the surface antigen first. */
+  if (p.def.pyro && p.ops <= 0) {
+    zone('shock', p.x, p.y, 115, 0.4, 0, '#ff9c5e');
+    if (host) { host.hp -= host.maxHp * 0.45; host.hit = 1; }
+    for (const n of G.nodes) {
+      if (n === host) continue;
+      if (d2(n.x, n.y, p.x, p.y) < 115 * 115) { n.hp -= 9 * (1 - S.dmgRes); n.hit = 1; }
+    }
+    pop(p.x, p.y - 22, 'PYROPTOSIS', '#ff9c5e', 13);
+    shake(9);
+    addBiomass(yield_ * 0.4);
+    for (let i = 0; i < 10; i++) burst(p.x, p.y, '#ff9c5e', 160);
+    destroyPathogen(idx, true);
+    return;
+  }
+  if (p.def.pyro && p.ops > 0) pop(p.x, p.y - 22, 'TOXIN NEUTRALISED', '#ffd76a', 11);
+
+  if (host) {
+    const dur = (0.55 + m * 0.5) * S.digestMult;
+    if (host.dig) {
+      addBiomass(yield_ * 0.55);
+      pop(p.x, p.y, '+' + Math.round(yield_ * 0.55), '#7fd4ff', 11);
+    } else {
+      host.dig = { k: p.k, t: 0, dur, yield: yield_, ops: p.ops > 0,
+        integ: 26 + (G.up['elastic'] || 0) * 6, mass: m, elite: !!p.elite, feast };
+    }
+  }
+  const dg = G.up['degran'] || 0;
+  if (dg > 0) {
+    const rr = 90 + dg * 16;
+    zone('shock', p.x, p.y, rr, 0.35, 0, '#ffd08a');
+    for (const q of G.paths) {
+      if (q === p) continue;
+      if (d2(q.x, q.y, p.x, p.y) < rr * rr) { q.hp -= 22 * dg * armorMul(q); q.stag = 0.9; q.hit = 1; }
+    }
+    shake(3);
+  }
+  if (p.agg > 0) {
+    for (const q of G.paths) {
+      if (q !== p && q.agg > 0 && d2(q.x, q.y, p.x, p.y) < 110 * 110) { q.hp -= 26; q.hit = 1; }
+    }
+    pop(p.x, p.y - 18, 'CLUMP COMBO', '#ffe08a', 11);
+  }
+  for (let i = 0; i < 8; i++) burst(p.x, p.y, p.def.col, 120);
+  destroyPathogen(idx, true);
+}
+
+function titanDevour(idx) {
+  const p = G.paths[idx];
+  addBiomass(p.mass * 15 + 10);
+  pop(p.x, p.y, '+' + Math.round(p.mass * 15 + 10), '#9fffc0', 13);
+  for (let i = 0; i < 10; i++) burst(p.x, p.y, p.def.col, 150);
+  G.titan.hp = Math.min(G.titan.maxHp, G.titan.hp + 12);
+  destroyPathogen(idx, true);
+}
+
+function destroyPathogen(idx, eaten) {
+  const p = G.paths[idx];
+  if (!eaten) { addBiomass(p.mass * 5); for (let i = 0; i < 6; i++) burst(p.x, p.y, p.def.col, 100); }
+  G.kills++;
+  /* Endotoxic shock — LPS floods out of the ruptured Gram-negative wall */
+  if (p.def.endotoxin) {
+    for (let i = 0; i < 2; i++) {
+      const a = rand(0, TAU), d = rand(0, 90);
+      zone('toxin', p.x + Math.cos(a) * d, p.y + Math.sin(a) * d, 150, 7, 12, '#c05ae0');
+    }
+    toast('ENDOTOXIN RELEASE');
+    shake(10);
+  }
+  if (p.mat) p.mat.host = null;
+  for (const q of G.paths) if (q.tether === p) q.tether = null;
+
+  const stacks = G.up['memory'] || 0;
+  if (stacks > 0) {
+    const m = G.memory[p.k] || (G.memory[p.k] = { n: 0, bonus: 0 });
+    m.n++;
+    if (m.n % 5 === 0 && m.bonus < stacks * 0.15) {
+      m.bonus = Math.min(stacks * 0.15, m.bonus + 0.15);
+      pop(p.x, p.y - 24, 'ANTIGEN MEMORISED: ' + p.def.name, '#c39bff', 11);
+    }
+  }
+  if (G.granzyme && G.granzyme.ref === p) G.granzyme = null;
+  G.paths.splice(idx, 1);
+}
+
+function addBiomass(v) {
+  G.biomass += v; G.xp += v;
+  while (G.xp >= G.xpNext) {
+    G.xp -= G.xpNext;
+    G.level++;
+    G.xpNext = Math.round(G.xpNext * 1.3 + 22);
+    recalc();
+    G.pending = (G.pending || 0) + 1;
+  }
+}
+
+/* ================================================ 7. PROJECTILES & FX */
+function updateProjectiles(dt) {
+  for (let i = G.projs.length - 1; i >= 0; i--) {
+    const b = G.projs[i];
+    b.x += b.vx * dt; b.y += b.vy * dt; b.life -= dt;
+    b.ang = (b.ang || 0) + dt * 9;
+    let hit = false;
+
+    if (b.kind === 'pore') {                        /* pathogen → leukocyte */
+      for (const n of G.nodes) {
+        const rr = n.r + b.r;
+        if (d2(n.x, n.y, b.x, b.y) > rr * rr) continue;
+        n.maxHp = Math.max(12, n.maxHp - 5);
+        n.hp = Math.min(n.hp, n.maxHp) - 4;
+        n.hit = 1;
+        pop(n.x, n.y - 16, 'PORED', '#ffe08a', 10);
+        hit = true; break;
+      }
+    } else {
+      for (const p of G.paths) {
+        const rr = p.r + b.r;
+        if (d2(p.x, p.y, b.x, b.y) > rr * rr) continue;
+        if (b.kind === 'ops') {
+          const wasTagged = p.ops > 0;
+          p.ops = 12; p.hit = 1;
+          pop(p.x, p.y - p.r - 6, 'TAGGED', '#ffd76a', 10);
+          if (p.elite && !wasTagged && (G.up['interleukin'] || 0) > 0) {
+            G.buffs.interleukin = 8; recalc();
+            zone('bloom', p.x, p.y, 200, 0.6, 0, '#c39bff');
+            toast('INTERLEUKIN CASCADE');
+          }
+        } else if (b.kind === 'agg') {
+          p.agg = 7.5; p.hit = 1;
+          pop(p.x, p.y - p.r - 6, 'BOUND', '#bfe0ff', 10);
+        }
+        hit = true; break;
+      }
+    }
+    if (hit || b.life <= 0 || b.x < 0 || b.y < 0 || b.x > ARENA.w || b.y > ARENA.h) G.projs.splice(i, 1);
+  }
+}
+
+function updateFx(dt) {
+  for (let i = G.fx.length - 1; i >= 0; i--) {
+    const z = G.fx[i];
+    z.t += dt;
+    if (z.kind === 'net' || z.kind === 'acid') {
+      for (const p of G.paths) {
+        if (d2(p.x, p.y, z.x, z.y) > z.r * z.r) continue;
+        p.hp -= z.dps * dt * armorMul(p) * memMul(p);
+        p.hit = Math.max(p.hit, 0.6);
+        if (z.kind === 'net') p.root = Math.max(p.root, 0.12);
+      }
+    } else if (z.kind === 'toxin' || z.kind === 'necrosis') {
+      /* hostile terrain — hurts leukocytes and erythrocytes alike */
+      for (const n of G.nodes) {
+        if (d2(n.x, n.y, z.x, z.y) > z.r * z.r) continue;
+        n.hp -= z.dps * dt * (1 - S.dmgRes); n.hit = Math.max(n.hit, 0.5);
+      }
+      for (const e of G.rbcs) {
+        if (d2(e.x, e.y, z.x, z.y) > z.r * z.r) continue;
+        e.hp -= z.dps * 0.8 * dt; e.hit = Math.max(e.hit, 0.4);
+      }
+      if (z.kind === 'necrosis') {                  /* keeps the wall from closing */
+        const s = nearestSeg(z.x, z.y);
+        if (s && d2(z.x, z.y, s.mx, s.my) < 140 * 140) s.hp = Math.max(0, s.hp - 4 * dt);
+      }
+    }
+    if (z.kind === 'shock') z.r = z.r0 * (0.4 + 1.1 * (z.t / z.dur));
+    if (z.t >= z.dur) G.fx.splice(i, 1);
+  }
+  for (let i = G.pops.length - 1; i >= 0; i--) {
+    const p = G.pops[i]; p.t += dt;
+    if (p.part) { p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.94; p.vy *= 0.94; }
+    else { p.y += p.vy * dt; p.vy *= 0.95; }
+    if (p.t >= p.dur) G.pops.splice(i, 1);
+  }
+  if (G.buffs.interleukin > 0) { G.buffs.interleukin -= dt; if (G.buffs.interleukin <= 0) recalc(); }
+  if (G.present) { G.present.t -= dt; if (G.present.t <= 0) G.present = null; }
+}
+
+/* ==================================================== 8. ABILITIES */
+function aimAngle() {
+  const c = swarmCenter(), m = G.beacon;
+  if (Math.abs(m.x - c.x) + Math.abs(m.y - c.y) < 30) return rand(0, TAU);
+  return Math.atan2(m.y - c.y, m.x - c.x);
+}
+function fireOpsonin() {
+  if (G.cd.ops > 0 || !G.nodes.length) return;
+  G.cd.ops = S.opsCd;
+  const c = swarmCenter(), a = aimAngle();
+  for (let i = 0; i < 5; i++) {
+    const ang = a + (i - 2) * 0.11 + rand(-.03, .03);
+    G.projs.push({ kind: 'ops', x: c.x, y: c.y, vx: Math.cos(ang) * 640, vy: Math.sin(ang) * 640,
+      life: 1.2, r: 7, col: '#ffd76a' });
+  }
+}
+function fireAgglutinin() {
+  if (G.cd.agg > 0 || !G.nodes.length) return;
+  G.cd.agg = S.aggCd;
+  const c = swarmCenter(), a = aimAngle();
+  for (let i = 0; i < 6; i++) {
+    const ang = a + (i - 2.5) * 0.16 + rand(-.04, .04);
+    G.projs.push({ kind: 'agg', x: c.x, y: c.y, vx: Math.cos(ang) * 470, vy: Math.sin(ang) * 470,
+      life: 1.5, r: 9, col: '#bfe0ff' });
+  }
+}
+function oxidativeBurst() {
+  if (G.cd.ros > 0 || !G.nodes.length) return;
+  G.cd.ros = S.rosCd;
+  const c = swarmCenter(), R = 280;
+  zone('shock', c.x, c.y, R, 0.4, 0, '#8fffd0');
+  zone('acid', c.x, c.y, R * 0.8, 5, 30, '#7cffb0');
+  for (const p of G.paths) {
+    if (d2(p.x, p.y, c.x, c.y) > R * R) continue;
+    p.hp -= 75 * armorMul(p) * S.dmgMult * memMul(p);
+    p.stag = 1.2; p.hit = 1;
+    const dx = p.x - c.x, dy = p.y - c.y, dd = len(dx, dy) || 1;
+    p.vx += (dx / dd) * 280; p.vy += (dy / dd) * 280;
+  }
+  for (const m of G.mats) if (d2(m.x, m.y, c.x, c.y) < R * R) m.hp -= 60;
+  for (const n of G.nodes) n.hp = Math.max(2, n.hp - n.maxHp * 0.16);
+  shake(12);
+  toast('RESPIRATORY BURST');
+}
+function superoxideSpray() {
+  if (!(G.up['superoxide'] > 0) || G.cd.spray > 0 || !G.nodes.length) return;
+  G.cd.spray = S.sprayCd;
+  const rank = G.up['superoxide'];
+  const c = swarmCenter(), a = aimAngle();
+  const range = 330 + rank * 25, half = 0.62;
+  G.fx.push({ kind: 'cone', x: c.x, y: c.y, a, range, half, t: 0, dur: 0.32, r: range, col: '#d8ff7a' });
+  const inCone = (x, y, pad) => {
+    const dx = x - c.x, dy = y - c.y, dd = len(dx, dy);
+    if (dd > range + (pad || 0)) return false;
+    let da = Math.atan2(dy, dx) - a;
+    while (da > Math.PI) da -= TAU; while (da < -Math.PI) da += TAU;
+    return Math.abs(da) <= half;
+  };
+  for (const p of G.paths) {
+    if (!inCone(p.x, p.y, p.r)) continue;
+    p.hp -= (48 + rank * 22) * armorMul(p) * S.dmgMult * memMul(p);
+    p.ops = Math.max(p.ops, 4);
+    p.hit = 1;
+    const dx = p.x - c.x, dy = p.y - c.y, dd = len(dx, dy) || 1;
+    p.vx += (dx / dd) * 160; p.vy += (dy / dd) * 160;
+  }
+  for (const m of G.mats) if (inCone(m.x, m.y, m.r)) m.hp -= 45 + rank * 20;
+  shake(6);
+}
+function giantCellFusion() {
+  if (!(G.up['titan'] > 0) || G.cd.titan > 0 || G.titan) return;
+  if (G.nodes.length < 10) { toast('NEED 10 NODES TO FUSE'); return; }
+  G.cd.titan = S.titanCd;
+  const c = swarmCenter();
+  G.nodes.sort((a, b) => a.hp - b.hp);
+  let hp = 0;
+  for (let i = 0; i < 10; i++) { const n = G.nodes.shift(); hp += n.maxHp; }
+  G.titan = { x: c.x, y: c.y, vx: 0, vy: 0, r: 48, hp: hp * 1.6, maxHp: hp * 1.6, t: 0, dur: 12, ph: 0 };
+  zone('shock', c.x, c.y, 220, 0.5, 0, '#8affa0');
+  shake(16);
+  toast('MULTINUCLEATED TITAN');
+}
+function endFusion() {
+  const T = G.titan; if (!T) return;
+  zone('shock', T.x, T.y, 190, 0.45, 0, '#8affa0');
+  G.titan = null;
+  for (let i = 0; i < 8; i++) { const n = spawnNode(T.x + rand(-40, 40), T.y + rand(-40, 40)); if (n) n.hp = n.maxHp * 0.7; }
+  shake(8);
+}
+function updateTitan(dt) {
+  const T = G.titan; if (!T) return;
+  T.t += dt; T.ph += dt * 2;
+  const dx = G.beacon.x - T.x, dy = G.beacon.y - T.y, d = len(dx, dy) || 1;
+  const spd = Math.min(170, d * 2.4);
+  T.vx = lerp(T.vx, (dx / d) * spd, 1 - Math.exp(-4 * dt));
+  T.vy = lerp(T.vy, (dy / d) * spd, 1 - Math.exp(-4 * dt));
+  T.x += T.vx * dt; T.y += T.vy * dt;
+  bounds(T, T.r);
+  for (const p of G.paths) {
+    const rr = T.r + p.r + 4;
+    if (d2(p.x, p.y, T.x, T.y) < rr * rr) T.hp -= p.def.dmg * 0.45 * dt * (1 - S.dmgRes);
+  }
+  if (T.t >= T.dur || T.hp <= 0) endFusion();
+}
+function granzymeSentence() {
+  if (!(G.up['granzyme'] > 0) || G.cd.granz > 0 || G.granzyme) return;
+  const c = swarmCenter();
+  let best = null, kind = null, score = -1;
+  for (const p of G.paths) {
+    const dd = d2(p.x, p.y, c.x, c.y);
+    if (dd > 520 * 520) continue;
+    const s = p.mass * (p.elite ? 4 : 1) * (p.ops > 0 ? 1.5 : 1) - Math.sqrt(dd) / 400;
+    if (s > score) { score = s; best = p; kind = 'p'; }
+  }
+  /* MHC-I inspection: a parasitised erythrocyte is a valid execution target */
+  for (const e of G.rbcs) {
+    if (!e.inf) continue;
+    const dd = d2(e.x, e.y, c.x, c.y);
+    if (dd > 520 * 520) continue;
+    const s = 5 + e.inf.t - Math.sqrt(dd) / 400;
+    if (s > score) { score = s; best = e; kind = 'rbc'; }
+  }
+  if (!best) { toast('NO TARGET IN RANGE'); return; }
+  G.cd.granz = S.granzCd;
+  G.granzyme = { ref: best, kind, t: 0 };
+  best.doom = 3;
+  toast(kind === 'rbc' ? 'INFECTED CELL MARKED' : 'DEATH SENTENCE ISSUED');
+}
+function updateGranzyme(dt) {
+  const gz = G.granzyme; if (!gz) return;
+  const o = gz.ref;
+  const gone = gz.kind === 'p' ? G.paths.indexOf(o) < 0 : G.rbcs.indexOf(o) < 0;
+  if (gone) { G.granzyme = null; return; }
+  gz.t += dt;
+  o.doom = Math.max(0, 3 - gz.t);
+  if (gz.t < 3) return;
+
+  if (gz.kind === 'rbc') {
+    const i = G.rbcs.indexOf(o);
+    pop(o.x, o.y - 20, 'APOPTOSIS', '#c39bff', 13);
+    G.granzyme = null;
+    if (i >= 0) lyse(i, 'clear');
+    return;
+  }
+  const R = 200;
+  const shock = !!G.syn['lysis'];
+  zone('shock', o.x, o.y, R, 0.5, 0, '#c39bff');
+  let caught = 0;
+  for (const q of G.paths) {
+    if (q === o) continue;
+    if (d2(q.x, q.y, o.x, o.y) > R * R) continue;
+    if (q.ops > 0) { q.hp = 0; pop(q.x, q.y, 'APOPTOSIS', '#c39bff', 11); }
+    else { q.hp -= 90 * armorMul(q); q.stag = 1; q.hit = 1; }
+    /* Targeted Lysis Shock — every collateral target is webbed where it stands */
+    if (shock) { zone('net', q.x, q.y, 52, 3.2, 20, '#e8f4ff'); caught++; }
+  }
+  if (shock) {
+    zone('net', o.x, o.y, 58, 3.2, 20, '#e8f4ff');
+    if (caught) pop(o.x, o.y - 38, 'TARGETED LYSIS SHOCK ×' + caught, '#dff0ff', 12);
+  }
+  o.hp = 0;
+  pop(o.x, o.y - 20, 'APOPTOSIS', '#c39bff', 14);
+  shake(14);
+  G.granzyme = null;
+  const idx = G.paths.indexOf(o);
+  if (idx >= 0) destroyPathogen(idx, false);
+}
+function toggleStance() {
+  const hasM1 = (G.up['m1'] || 0) > 0, hasM2 = (G.up['m2'] || 0) > 0;
+  if (!hasM1 && !hasM2) return;
+  const cyc = [null];
+  if (hasM1) cyc.push('M1');
+  if (hasM2) cyc.push('M2');
+  const i = cyc.indexOf(G.stance);
+  G.stance = cyc[(i + 1) % cyc.length];
+  recalc();
+  toast(G.stance ? G.stance + ' STANCE' : 'STANCE NEUTRAL');
+}
+
+/* ======================================================= 9. WAVES */
+function buildWave() {
+  G.wave++;
+  const w = G.wave;
+  let budget = 5 + w * 3.4;
+  const q = [];
+  if (w >= 9 && w % 5 === 4) {
+    const n = 1 + Math.floor(w / 18);
+    for (let i = 0; i < n; i++) { q.push('biofilm'); budget -= PATHO.biofilm.cost; }
+  }
+  const pool = Object.keys(PATHO).filter(k => !PATHO[k].elite && PATHO[k].minWave <= w);
+  /* Per-wave ceilings: a wave of six wall-chewers or six T3SS injectors is not
+     a difficulty curve, it is a coin flip. */
+  const CAP = {
+    clostridium: 1 + Math.floor(w / 7),
+    pseudomonas: 1 + Math.floor(w / 6),
+    aspergillus: 1 + Math.floor(w / 9),
+    staph: 1 + Math.floor(w / 6),
+    merozoite: 2 + Math.floor(w / 4),
+  };
+  const used = {};
+  q.forEach(k => used[k] = (used[k] || 0) + 1);
+  let guard = 400;
+  while (budget > 0 && guard-- > 0) {
+    const affordable = pool.filter(k =>
+      PATHO[k].cost <= budget + 1 && (used[k] || 0) < (CAP[k] === undefined ? 99 : CAP[k]));
+    if (!affordable.length) break;
+    const k = pick(affordable);
+    used[k] = (used[k] || 0) + 1;
+    q.push(k); budget -= PATHO[k].cost;
+  }
+  for (let i = q.length - 1; i > 0; i--) { const j = randi(0, i + 1); const t = q[i]; q[i] = q[j]; q[j] = t; }
+  G.spawnQueue = q;
+  G.spawnTimer = 0.3;
+  G.waveState = 'spawning';
+  toast('WAVE ' + w);
+  /* announce anything the player has not met before */
+  const fresh = [...new Set(q)].filter(k => !G.seen[k]);
+  fresh.forEach((k, i) => setTimeout(() => {
+    if (G.mode === 'play') toast(PATHO[k].name.toUpperCase() + ' — ' + PATHO[k].threat);
+  }, 1400 + i * 1700));
+  fresh.forEach(k => G.seen[k] = 1);
+}
+
+function spawnPoint() {
+  const c = swarmCenter();
+  const minD = Math.max(700, (VW / 2) / G.cam.zoom + 200);
+  for (let i = 0; i < 30; i++) {
+    const x = rand(60, ARENA.w - 60), y = rand(60, ARENA.h - 60);
+    if (d2(x, y, c.x, c.y) > minD * minD) return { x, y };
+  }
+  return { x: rand(60, ARENA.w - 60), y: rand(60, ARENA.h - 60) };
+}
+
+function updateWaves(dt) {
+  if (G.waveState === 'idle') {
+    /* resolution phase: the host repairs itself while the vessel is clear */
+    const rate = 1.7 * (G.stance === 'M2' ? 1.6 : 1);
+    G.host = Math.min(G.hostMax, G.host + rate * dt);
+    G.waveTimer -= dt;
+    if (G.waveTimer <= 0) buildWave();
+  } else if (G.waveState === 'spawning') {
+    G.spawnTimer -= dt;
+    if (G.spawnTimer <= 0 && G.spawnQueue.length) {
+      const perTick = 1 + Math.floor(G.wave / 8);
+      for (let i = 0; i < perTick && G.spawnQueue.length; i++) {
+        const k = G.spawnQueue.shift();
+        const pt = spawnPoint();
+        const p = spawnPathogen(k, pt.x, pt.y);
+        zone('bloom', pt.x, pt.y, p.r + 18, 0.5, 0, p.def.col);
+      }
+      G.spawnTimer = clamp(1.5 - G.wave * 0.03, 0.32, 1.5);
+    }
+    if (!G.spawnQueue.length && !G.paths.length && !G.mats.length) {
+      G.waveState = 'idle'; G.waveTimer = 4.5;
+      toast('WAVE CLEARED — INFLAMMATION RESOLVING');
+      for (const n of G.nodes) n.hp = Math.min(n.maxHp, n.hp + n.maxHp * 0.3);
+      addBiomass(12 + G.wave * 4);
+    }
+  }
+}
+
+/* ==================================================== 11. RENDERING */
+const glowSprite = (() => {
+  const s = document.createElement('canvas'); s.width = s.height = 128;
+  const g = s.getContext('2d');
+  const grd = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  grd.addColorStop(0, 'rgba(190,238,255,0.95)');
+  grd.addColorStop(0.35, 'rgba(120,200,255,0.42)');
+  grd.addColorStop(1, 'rgba(70,150,255,0)');
+  g.fillStyle = grd; g.fillRect(0, 0, 128, 128);
+  return s;
+})();
+
+function initPlatelets() {
+  G.plts = [];
+  for (let i = 0; i < 60; i++) {
+    G.plts.push({ x: rand(0, ARENA.w), y: rand(0, ARENA.h), r: rand(3, 6),
+      vx: rand(-11, 11), vy: rand(-11, 11) });
+  }
+}
+function updatePlatelets(dt) {
+  for (const p of G.plts) {
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    if (p.x < -20) p.x = ARENA.w + 20; if (p.x > ARENA.w + 20) p.x = -20;
+    if (p.y < -20) p.y = ARENA.h + 20; if (p.y > ARENA.h + 20) p.y = -20;
+  }
+}
+
+function w2s() {
+  const z = G.cam.zoom;
+  ctx.setTransform(DPR * z, 0, 0, DPR * z,
+    DPR * (VW / 2 - G.cam.x * z + G.shx), DPR * (VH / 2 - G.cam.y * z + G.shy));
+}
+
+function render() {
+  const z = G.cam.zoom;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.fillStyle = '#0a0207'; ctx.fillRect(0, 0, VW, VH);
+
+  w2s();
+  const bg = ctx.createLinearGradient(0, 0, 0, ARENA.h);
+  bg.addColorStop(0, '#1b0512'); bg.addColorStop(0.5, '#27081c'); bg.addColorStop(1, '#14040e');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, ARENA.w, ARENA.h);
+
+  const vl = G.cam.x - VW / 2 / z - 80, vr = G.cam.x + VW / 2 / z + 80;
+  const vt = G.cam.y - VH / 2 / z - 80, vb = G.cam.y + VH / 2 / z + 80;
+  const vis = (x, y, r) => x + r > vl && x - r < vr && y + r > vt && y - r < vb;
+
+  drawVessel(vis);
+  for (const p of G.plts) {
+    if (!vis(p.x, p.y, 8)) continue;
+    ctx.fillStyle = 'rgba(200,160,176,0.45)';
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, TAU); ctx.fill();
+  }
+  for (const e of G.rbcs) if (vis(e.x, e.y, e.r + 10)) drawRbc(e);
+  drawMats(vis);
+  drawZones();
+  drawAgglutination();
+  drawTethers();
+  for (const p of G.paths) if (vis(p.x, p.y, p.r + 30)) drawPathogen(p);
+  drawProjectiles();
+  drawSwarm(vis);
+  drawTitan();
+  drawPops();
+  drawBeacon();
+
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  const vg = ctx.createRadialGradient(VW / 2, VH / 2, Math.min(VW, VH) * 0.34, VW / 2, VH / 2, Math.max(VW, VH) * 0.78);
+  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(4,0,6,0.82)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, VW, VH);
+  if (G.dangerFlash > 0) {
+    ctx.fillStyle = 'rgba(255,40,70,' + (G.dangerFlash * 0.17).toFixed(3) + ')';
+    ctx.fillRect(0, 0, VW, VH);
+  }
+  if (G.mode !== 'menu') { drawThreatMarkers(); drawMinimap(); }
+}
+
+/* --------------------------------------------------- the endothelium */
+function segColor(s) {
+  const k = s.hp / s.maxHp;
+  if (s.hp <= 0) return '#2a0a10';
+  if (k > 0.66) return '#8d2740';
+  if (k > 0.33) return '#8a5426';
+  return '#6b5a1e';
+}
+function drawVessel(vis) {
+  ctx.save();
+  ctx.lineWidth = 26; ctx.strokeStyle = '#3a0c1a';
+  ctx.strokeRect(0, 0, ARENA.w, ARENA.h);
+  for (const s of G.wall) {
+    if (!vis((s.x1 + s.x2) / 2, (s.y1 + s.y2) / 2, 200)) continue;
+    ctx.lineWidth = 9;
+    ctx.strokeStyle = segColor(s);
+    ctx.beginPath(); ctx.moveTo(s.x1, s.y1); ctx.lineTo(s.x2, s.y2); ctx.stroke();
+    if (s.hp <= 0) {
+      /* a breach: plasma and cells are leaking into the tissue */
+      ctx.save();
+      ctx.globalAlpha = 0.35 + 0.25 * Math.sin(G.t * 5 + s.mx);
+      ctx.strokeStyle = '#ff5470'; ctx.lineWidth = 4;
+      ctx.setLineDash([10, 12]); ctx.lineDashOffset = -G.t * 60;
+      ctx.beginPath(); ctx.moveTo(s.x1, s.y1); ctx.lineTo(s.x2, s.y2); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    } else if (s.hp < s.maxHp * 0.6) {
+      ctx.strokeStyle = 'rgba(220,170,90,0.35)'; ctx.lineWidth = 3;
+      ctx.beginPath();
+      for (let i = 0; i <= 6; i++) {
+        const t = i / 6;
+        const x = lerp(s.x1, s.x2, t), y = lerp(s.y1, s.y2, t);
+        const o = Math.sin(t * 9 + s.mx * 0.01) * 7;
+        const nx = (s.side === 'top' || s.side === 'bottom') ? 0 : o;
+        const ny = (s.side === 'top' || s.side === 'bottom') ? o : 0;
+        i ? ctx.lineTo(x + nx, y + ny) : ctx.moveTo(x + nx, y + ny);
+      }
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+/* --------------------------------------------------------- red cells */
+function drawRbc(e) {
+  const k = clamp(e.hp / e.maxHp, 0, 1);
+  ctx.save(); ctx.translate(e.x, e.y); ctx.rotate(e.ang); ctx.scale(1, 0.86);
+  const base = e.inf ? '#6d2440' : '#7d1d2c';
+  ctx.fillStyle = e.hit > 0 ? '#c96a72' : base;
+  ctx.globalAlpha = 0.45 + 0.55 * k;
+  ctx.beginPath(); ctx.arc(0, 0, e.r, 0, TAU); ctx.fill();
+  ctx.fillStyle = e.inf ? '#3d0f2c' : '#5c1220';
+  ctx.beginPath(); ctx.arc(0, 0, e.r * 0.55, 0, TAU); ctx.fill();
+  ctx.globalAlpha = 0.6 * (0.4 + 0.6 * k);
+  ctx.strokeStyle = '#a63142'; ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.arc(0, 0, e.r, 0, TAU); ctx.stroke();
+  ctx.globalAlpha = 1;
+  if (e.inf) {
+    /* haemozoin crystals from digested haemoglobin */
+    ctx.fillStyle = '#d982f5';
+    for (let i = 0; i < 4; i++) {
+      const a = e.ang * 2 + i * 1.7 + e.inf.t;
+      ctx.beginPath();
+      ctx.arc(Math.cos(a) * e.r * 0.4, Math.sin(a) * e.r * 0.4, 1.8 + e.inf.t * 0.25, 0, TAU);
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+  if (e.inf) {
+    const prog = e.inf.t / e.inf.dur;
+    ctx.strokeStyle = 'rgba(217,130,245,' + (0.5 + 0.4 * Math.sin(G.t * 7)) + ')';
+    ctx.lineWidth = 2.2;
+    ctx.beginPath(); ctx.arc(e.x, e.y, e.r + 5, -Math.PI / 2, -Math.PI / 2 + TAU * prog); ctx.stroke();
+  }
+  if (e.doom > 0) {
+    ctx.strokeStyle = '#c39bff'; ctx.lineWidth = 2.6;
+    ctx.beginPath(); ctx.arc(e.x, e.y, e.r + 12, -Math.PI / 2, -Math.PI / 2 + TAU * (1 - e.doom / 3)); ctx.stroke();
+  }
+}
+
+/* -------------------------------------------------------- mycelium */
+function drawMats(vis) {
+  for (const m of G.mats) {
+    if (!vis(m.x, m.y, m.r + 20)) continue;
+    ctx.save();
+    const g = ctx.createRadialGradient(m.x, m.y, m.r * 0.2, m.x, m.y, m.r);
+    g.addColorStop(0, 'rgba(120,72,30,0.92)'); g.addColorStop(1, 'rgba(90,52,22,0.55)');
+    ctx.fillStyle = g;
+    blob(m.x, m.y, m.r, 13, m.t * 0.35, 0.13); ctx.fill();
+    ctx.strokeStyle = 'rgba(224,138,74,0.75)'; ctx.lineWidth = 1.5;
+    for (let i = 0; i < 22; i++) {
+      const a = (i / 22) * TAU + m.t * 0.1;
+      const r0 = m.r * 0.25, r1 = m.r * (0.75 + 0.3 * Math.sin(i * 3.1 + m.t));
+      ctx.beginPath();
+      ctx.moveTo(m.x + Math.cos(a) * r0, m.y + Math.sin(a) * r0);
+      ctx.quadraticCurveTo(
+        m.x + Math.cos(a + 0.3) * r1 * 0.7, m.y + Math.sin(a + 0.3) * r1 * 0.7,
+        m.x + Math.cos(a) * r1, m.y + Math.sin(a) * r1);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = '#e08a4a'; ctx.lineWidth = 2.4;
+    ctx.beginPath(); ctx.arc(m.x, m.y, m.r + 4, -Math.PI / 2, -Math.PI / 2 + TAU * clamp(m.hp / m.maxHp, 0, 1));
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function drawZones() {
+  for (const z of G.fx) {
+    const k = z.t / z.dur;
+    if (z.kind === 'acid') {
+      ctx.save();
+      ctx.globalAlpha = (1 - k) * 0.5;
+      const g = ctx.createRadialGradient(z.x, z.y, 0, z.x, z.y, z.r);
+      g.addColorStop(0, 'rgba(120,255,170,0.05)'); g.addColorStop(0.55, 'rgba(120,255,170,0.30)');
+      g.addColorStop(1, 'rgba(60,220,140,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(z.x, z.y, z.r, 0, TAU); ctx.fill();
+      ctx.globalAlpha = (1 - k) * 0.7; ctx.strokeStyle = '#7cffb0'; ctx.lineWidth = 2;
+      ctx.setLineDash([9, 11]); ctx.lineDashOffset = -G.t * 40;
+      ctx.beginPath(); ctx.arc(z.x, z.y, z.r * 0.96, 0, TAU); ctx.stroke();
+      ctx.setLineDash([]); ctx.restore();
+    } else if (z.kind === 'toxin' || z.kind === 'necrosis') {
+      const tox = z.kind === 'toxin';
+      ctx.save();
+      ctx.globalAlpha = (1 - k) * 0.62;
+      const g = ctx.createRadialGradient(z.x, z.y, 0, z.x, z.y, z.r);
+      g.addColorStop(0, tox ? 'rgba(196,90,224,0.45)' : 'rgba(201,138,58,0.45)');
+      g.addColorStop(1, tox ? 'rgba(120,40,160,0)' : 'rgba(120,80,30,0)');
+      ctx.fillStyle = g;
+      blob(z.x, z.y, z.r * (0.75 + 0.25 * Math.sin(G.t * 2 + z.x)), 11, G.t * 0.6 + z.x, 0.14);
+      ctx.fill();
+      ctx.globalAlpha = (1 - k) * 0.5;
+      ctx.strokeStyle = tox ? '#e0a0ff' : '#e0b070'; ctx.lineWidth = 1.6;
+      ctx.setLineDash([4, 10]); ctx.lineDashOffset = G.t * 30;
+      ctx.beginPath(); ctx.arc(z.x, z.y, z.r * 0.9, 0, TAU); ctx.stroke();
+      ctx.setLineDash([]); ctx.restore();
+    } else if (z.kind === 'net') {
+      ctx.save();
+      ctx.globalAlpha = (1 - k) * 0.9;
+      ctx.strokeStyle = '#dff0ff'; ctx.lineWidth = 1.4;
+      if (!z.web) {
+        z.web = [];
+        for (let i = 0; i < 22; i++) {
+          const a1 = rand(0, TAU), a2 = a1 + rand(1.2, 2.6);
+          z.web.push([Math.cos(a1) * z.r * rand(.3, 1), Math.sin(a1) * z.r * rand(.3, 1),
+            Math.cos(a2) * z.r * rand(.3, 1), Math.sin(a2) * z.r * rand(.3, 1)]);
+        }
+      }
+      ctx.beginPath();
+      for (const s of z.web) { ctx.moveTo(z.x + s[0], z.y + s[1]); ctx.lineTo(z.x + s[2], z.y + s[3]); }
+      ctx.stroke();
+      ctx.globalAlpha = (1 - k) * 0.25; ctx.fillStyle = '#dff0ff';
+      ctx.beginPath(); ctx.arc(z.x, z.y, z.r, 0, TAU); ctx.fill();
+      ctx.restore();
+    } else if (z.kind === 'shock') {
+      ctx.save();
+      ctx.globalAlpha = 1 - k; ctx.strokeStyle = z.col; ctx.lineWidth = 5 * (1 - k) + 1;
+      ctx.beginPath(); ctx.arc(z.x, z.y, z.r, 0, TAU); ctx.stroke();
+      ctx.restore();
+    } else if (z.kind === 'bloom') {
+      ctx.save();
+      ctx.globalAlpha = (1 - k) * 0.8; ctx.strokeStyle = z.col; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(z.x, z.y, z.r * (0.4 + k), 0, TAU); ctx.stroke();
+      ctx.restore();
+    } else if (z.kind === 'cone') {
+      ctx.save();
+      ctx.globalAlpha = (1 - k) * 0.55;
+      const g = ctx.createRadialGradient(z.x, z.y, 0, z.x, z.y, z.range);
+      g.addColorStop(0, 'rgba(230,255,150,0.9)'); g.addColorStop(1, 'rgba(180,255,90,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.moveTo(z.x, z.y);
+      ctx.arc(z.x, z.y, z.range, z.a - z.half, z.a + z.half); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+  }
+}
+
+function drawAgglutination() {
+  ctx.save(); ctx.strokeStyle = 'rgba(190,225,255,0.55)'; ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  for (let i = 0; i < G.paths.length; i++) {
+    const a = G.paths[i]; if (a.agg <= 0) continue;
+    for (let j = i + 1; j < G.paths.length; j++) {
+      const b = G.paths[j]; if (b.agg <= 0) continue;
+      if (d2(a.x, a.y, b.x, b.y) > 108 * 108) continue;
+      ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+    }
+  }
+  ctx.stroke(); ctx.restore();
+}
+
+function drawTethers() {
+  for (const p of G.paths) {
+    if (!p.tether) continue;
+    const n = p.tether;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(90,217,200,0.9)'; ctx.lineWidth = 2.2;
+    ctx.setLineDash([7, 5]); ctx.lineDashOffset = -G.t * 55;
+    ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(n.x, n.y); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#5ad9c8';
+    ctx.beginPath(); ctx.arc(n.x, n.y, 3.4, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+}
+
+function drawPathogen(p) {
+  const def = p.def;
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  const col = p.enraged ? '#ff6a4a' : def.col;
+  ctx.rotate(Math.atan2(p.vy, p.vx));
+
+  if (def.shape === 'rod') {
+    ctx.fillStyle = col;
+    roundRect(-p.r * 1.5, -p.r * 0.72, p.r * 3, p.r * 1.44, p.r * 0.7); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.18)';
+    roundRect(-p.r * 1.2, -p.r * 0.5, p.r * 1.4, p.r * 0.5, p.r * 0.25); ctx.fill();
+  } else if (def.shape === 'spiral') {
+    ctx.strokeStyle = col; ctx.lineWidth = p.r * 0.52; ctx.lineCap = 'round';
+    ctx.beginPath();
+    for (let i = 0; i <= 26; i++) {
+      const t = i / 26, x = (t - 0.5) * p.r * 3.4;
+      const y = Math.sin(t * 9 + p.ang) * p.r * 0.72;
+      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.stroke();
+  } else if (def.shape === 'virus') {
+    ctx.strokeStyle = col; ctx.lineWidth = 1.8;
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * TAU + p.ang * 0.4;
+      ctx.beginPath(); ctx.moveTo(Math.cos(a) * p.r, Math.sin(a) * p.r);
+      ctx.lineTo(Math.cos(a) * (p.r + 5), Math.sin(a) * (p.r + 5)); ctx.stroke();
+    }
+    ctx.fillStyle = col; ctx.beginPath(); ctx.arc(0, 0, p.r, 0, TAU); ctx.fill();
+  } else if (def.shape === 'spore') {
+    ctx.strokeStyle = col; ctx.lineWidth = 2.4;
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * TAU + p.ang * 0.25;
+      ctx.beginPath(); ctx.moveTo(Math.cos(a) * p.r * .8, Math.sin(a) * p.r * .8);
+      ctx.lineTo(Math.cos(a) * (p.r + 14), Math.sin(a) * (p.r + 14)); ctx.stroke();
+    }
+    blob(0, 0, p.r, 11, p.ang, 0.1); ctx.fillStyle = col; ctx.fill();
+  } else if (def.shape === 'colony') {
+    ctx.fillStyle = 'rgba(190,110,230,0.20)';
+    ctx.beginPath(); ctx.arc(0, 0, p.r * 1.5, 0, TAU); ctx.fill();
+    blob(0, 0, p.r, 13, p.ang * 0.5, 0.13); ctx.fillStyle = col; ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.16)';
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * TAU + p.ang * 0.3;
+      ctx.beginPath(); ctx.arc(Math.cos(a) * p.r * .5, Math.sin(a) * p.r * .5, p.r * .22, 0, TAU); ctx.fill();
+    }
+  } else {
+    blob(0, 0, p.r, 12, p.ang * 0.6, 0.08); ctx.fillStyle = col; ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.20)';
+    ctx.beginPath(); ctx.arc(-p.r * .3, -p.r * .3, p.r * .34, 0, TAU); ctx.fill();
+  }
+  if (p.hit > 0) {
+    ctx.globalAlpha = p.hit * 0.7; ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(0, 0, p.r * 1.1, 0, TAU); ctx.fill(); ctx.globalAlpha = 1;
+  }
+  ctx.rotate(-Math.atan2(p.vy, p.vx));
+
+  if (p.capsule && p.ops <= 0) {
+    ctx.strokeStyle = 'rgba(255,240,180,0.75)'; ctx.lineWidth = 2.6;
+    ctx.setLineDash([6, 7]); ctx.lineDashOffset = G.t * -26;
+    ctx.beginPath(); ctx.arc(0, 0, p.r + 8, 0, TAU); ctx.stroke(); ctx.setLineDash([]);
+  }
+  if (p.ops > 0) {
+    ctx.strokeStyle = '#ffd76a'; ctx.lineWidth = 2;
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * TAU + G.t * 1.4;
+      const x = Math.cos(a) * (p.r + 7), y = Math.sin(a) * (p.r + 7);
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a) * 5, y + Math.sin(a) * 5); ctx.stroke();
+    }
+    ctx.globalAlpha = .5; ctx.beginPath(); ctx.arc(0, 0, p.r + 7, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1;
+  }
+  if (p.agg > 0) {
+    ctx.strokeStyle = 'rgba(190,225,255,0.8)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(0, 0, p.r + 3, 0, TAU); ctx.stroke();
+  }
+  /* pyroptotic strain: primed to detonate if swallowed untagged */
+  if (def.pyro && p.ops <= 0) {
+    ctx.strokeStyle = 'rgba(255,150,80,' + (0.5 + 0.4 * Math.sin(G.t * 8 + p.seed)) + ')';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([3, 5]); ctx.lineDashOffset = G.t * 18;
+    ctx.beginPath(); ctx.arc(0, 0, p.r + 5, 0, TAU); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  if (p.eng > 0.02) {
+    ctx.strokeStyle = '#9fe8ff'; ctx.lineWidth = 3.4; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(0, 0, p.r + 13, -Math.PI / 2, -Math.PI / 2 + TAU * Math.min(1, p.eng)); ctx.stroke();
+  } else if (p.gate) {
+    /* Mass gate: the swarm is on it but cannot lift it. Say so, rather than
+       leaving the player to wonder why nothing is happening. */
+    const frac = clamp(p.gate.have / p.gate.need, 0, 1);
+    ctx.strokeStyle = 'rgba(255,150,90,0.30)'; ctx.lineWidth = 3.4;
+    ctx.beginPath(); ctx.arc(0, 0, p.r + 13, 0, TAU); ctx.stroke();
+    ctx.strokeStyle = '#ff9c5e'; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(0, 0, p.r + 13, -Math.PI / 2, -Math.PI / 2 + TAU * frac); ctx.stroke();
+    ctx.fillStyle = '#ffb07a'; ctx.font = 'bold 10px ui-monospace,Consolas,monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('MASS ' + p.gate.have.toFixed(1) + '/' + p.gate.need.toFixed(1), 0, p.r + 30);
+  }
+  if (p.doom > 0) {
+    ctx.strokeStyle = '#c39bff'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(0, 0, p.r + 19, -Math.PI / 2, -Math.PI / 2 + TAU * (1 - p.doom / 3)); ctx.stroke();
+    ctx.fillStyle = '#c39bff'; ctx.font = 'bold 12px ui-monospace,monospace'; ctx.textAlign = 'center';
+    ctx.fillText(p.doom.toFixed(1), 0, -p.r - 26);
+  }
+  /* Antigen Presentation: this whole species is flagged for critical damage */
+  if (isPresented(p)) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(195,155,255,' + (0.55 + 0.35 * Math.sin(G.t * 6 + p.seed)) + ')';
+    ctx.lineWidth = 2.4;
+    ctx.setLineDash([5, 6]); ctx.lineDashOffset = -G.t * 40;
+    ctx.beginPath(); ctx.arc(0, 0, p.r + 11, 0, TAU); ctx.stroke();
+    ctx.setLineDash([]);
+    for (let i = 0; i < 4; i++) {                 /* MHC-I tick marks */
+      const a = i * (TAU / 4) + G.t * 0.9;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * (p.r + 13), Math.sin(a) * (p.r + 13));
+      ctx.lineTo(Math.cos(a) * (p.r + 19), Math.sin(a) * (p.r + 19));
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+  /* a red ring means it is actively hurting the host right now */
+  if (p.busy) {
+    ctx.strokeStyle = 'rgba(255,90,110,' + (0.45 + 0.35 * Math.sin(G.t * 9)) + ')';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(0, 0, p.r + 15, 0, TAU); ctx.stroke();
+  }
+  if (p.mass >= 2.5 && p.hp < p.maxHp) {
+    const w = p.r * 2.4;
+    ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(-w / 2, -p.r - 15, w, 4);
+    ctx.fillStyle = p.elite ? '#e07de0' : '#ff8f6a';
+    ctx.fillRect(-w / 2, -p.r - 15, w * (p.hp / p.maxHp), 4);
+  }
+  ctx.restore();
+}
+
+const _bp = [];
+function blob(x, y, r, n, ph, amp) {
+  _bp.length = 0;
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * TAU;
+    const rr = r * (1 + Math.sin(a * 3 + ph) * amp + Math.cos(a * 2 - ph * 1.3) * amp * 0.6);
+    _bp.push(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+  }
+  ctx.beginPath();
+  ctx.moveTo((_bp[(n - 1) * 2] + _bp[0]) / 2, (_bp[(n - 1) * 2 + 1] + _bp[1]) / 2);
+  for (let i = 0; i < n; i++) {
+    const j = ((i + 1) % n) * 2, k = i * 2;
+    ctx.quadraticCurveTo(_bp[k], _bp[k + 1], (_bp[k] + _bp[j]) / 2, (_bp[k + 1] + _bp[j + 1]) / 2);
+  }
+  ctx.closePath();
+}
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function drawProjectiles() {
+  for (const b of G.projs) {
+    ctx.save(); ctx.translate(b.x, b.y);
+    if (b.kind === 'ops') {
+      ctx.fillStyle = '#ffd76a'; ctx.shadowColor = '#ffb300'; ctx.shadowBlur = 12;
+      ctx.beginPath(); ctx.arc(0, 0, b.r * 0.62, 0, TAU); ctx.fill();
+    } else if (b.kind === 'pore') {
+      ctx.rotate(b.ang * 0.4);
+      ctx.strokeStyle = '#ffb0a0'; ctx.lineWidth = 2; ctx.shadowColor = '#ff6a5a'; ctx.shadowBlur = 10;
+      ctx.beginPath(); ctx.arc(0, 0, b.r * 0.7, 0, TAU); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-b.r, 0); ctx.lineTo(b.r, 0); ctx.stroke();
+    } else {
+      ctx.rotate(b.ang); ctx.strokeStyle = '#dff0ff'; ctx.lineWidth = 2.6; ctx.lineCap = 'round';
+      ctx.shadowColor = '#8fd0ff'; ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.moveTo(0, 5); ctx.lineTo(0, -1);
+      ctx.moveTo(0, -1); ctx.lineTo(-5, -7);
+      ctx.moveTo(0, -1); ctx.lineTo(5, -7);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+  ctx.shadowBlur = 0;
+}
+
+function drawSwarm(vis) {
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (const n of G.nodes) {
+    if (!vis(n.x, n.y, 40)) continue;
+    const s = n.r * 5.4;
+    ctx.globalAlpha = 0.42;
+    ctx.drawImage(glowSprite, n.x - s / 2, n.y - s / 2, s, s);
+  }
+  ctx.restore();
+
+  for (const n of G.nodes) {
+    if (!vis(n.x, n.y, 30)) continue;
+    const hpk = n.hp / n.maxHp;
+    ctx.save(); ctx.translate(n.x, n.y);
+    blob(0, 0, n.r * (n.dig ? 1.3 : 1), 13, n.ph, 0.07);
+    ctx.fillStyle = n.hit > 0 ? '#ffdede' : (hpk < 0.4 ? '#cfd8e6' : '#eef8ff');
+    ctx.fill();
+    ctx.strokeStyle = n.inj > 0 ? 'rgba(90,217,200,0.95)' : 'rgba(120,200,255,0.85)';
+    ctx.lineWidth = n.inj > 0 ? 2.2 : 1.4; ctx.stroke();
+    ctx.fillStyle = 'rgba(118,172,220,0.45)';
+    for (let i = 0; i < 3; i++) {
+      const a = n.ph * 0.4 + i * 2.1;
+      ctx.beginPath(); ctx.arc(Math.cos(a) * n.r * .26, Math.sin(a) * n.r * .26, n.r * .27, 0, TAU); ctx.fill();
+    }
+    if (n.dig) {
+      const g = n.dig, pk = clamp(g.t / g.dur, 0, 1);
+      const pd = PATHO[g.k];
+      ctx.globalAlpha = 1 - pk * 0.7;
+      ctx.fillStyle = pd.col;
+      ctx.beginPath(); ctx.arc(0, 0, n.r * 0.62 * (1 - pk * 0.55), 0, TAU); ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = '#8fe9ff'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(0, 0, n.r + 5, -Math.PI / 2, -Math.PI / 2 + TAU * pk); ctx.stroke();
+    }
+    if (hpk < 0.45) {
+      ctx.strokeStyle = 'rgba(255,110,140,' + (0.85 - hpk) + ')'; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.arc(0, 0, n.r + 2.5, 0, TAU); ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+
+function drawTitan() {
+  const T = G.titan; if (!T) return;
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = 0.55;
+  ctx.drawImage(glowSprite, T.x - T.r * 4, T.y - T.r * 4, T.r * 8, T.r * 8);
+  ctx.restore();
+  ctx.save(); ctx.translate(T.x, T.y);
+  ctx.strokeStyle = 'rgba(140,255,170,0.35)'; ctx.lineWidth = 3;
+  ctx.setLineDash([16, 22]); ctx.lineDashOffset = -G.t * 90;
+  ctx.beginPath(); ctx.arc(0, 0, 250, 0, TAU); ctx.stroke(); ctx.setLineDash([]);
+  blob(0, 0, T.r, 15, T.ph, 0.07);
+  ctx.fillStyle = '#eafff0'; ctx.fill();
+  ctx.strokeStyle = '#8affa0'; ctx.lineWidth = 3; ctx.stroke();
+  ctx.fillStyle = 'rgba(90,190,130,0.5)';
+  for (let i = 0; i < 7; i++) {
+    const a = T.ph * .4 + i * .9, rr = T.r * (0.2 + (i % 3) * 0.18);
+    ctx.beginPath(); ctx.arc(Math.cos(a) * rr, Math.sin(a) * rr, T.r * .16, 0, TAU); ctx.fill();
+  }
+  const w = 90;
+  ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(-w / 2, -T.r - 18, w, 5);
+  ctx.fillStyle = '#8affa0'; ctx.fillRect(-w / 2, -T.r - 18, w * (T.hp / T.maxHp), 5);
+  ctx.restore();
+}
+
+function drawPops() {
+  ctx.textAlign = 'center';
+  for (const p of G.pops) {
+    const k = p.t / p.dur;
+    ctx.globalAlpha = 1 - k;
+    if (p.part) {
+      ctx.fillStyle = p.col;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r * (1 - k * 0.6), 0, TAU); ctx.fill();
+    } else {
+      ctx.fillStyle = p.col;
+      ctx.font = '700 ' + p.sz + 'px ui-monospace,Consolas,monospace';
+      ctx.fillText(p.txt, p.x, p.y);
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawBeacon() {
+  const b = G.beacon;
+  ctx.save();
+  const pulse = 1 + Math.sin(G.t * 4) * 0.12;
+  ctx.strokeStyle = 'rgba(150,220,255,0.55)'; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.arc(b.x, b.y, 13 * pulse, 0, TAU); ctx.stroke();
+  ctx.globalAlpha = .35;
+  ctx.setLineDash([5, 9]); ctx.lineDashOffset = -G.t * 30;
+  ctx.beginPath(); ctx.arc(b.x, b.y, G.formLerp, 0, TAU); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = 'rgba(200,240,255,0.9)';
+  ctx.beginPath();
+  ctx.moveTo(b.x - 7, b.y); ctx.lineTo(b.x + 7, b.y);
+  ctx.moveTo(b.x, b.y - 7); ctx.lineTo(b.x, b.y + 7);
+  ctx.stroke();
+  ctx.restore();
+}
+
+/* ------------------------------------ off-screen threat direction ----- */
+function drawThreatMarkers() {
+  const z = G.cam.zoom;
+  const list = [];
+  for (const p of G.paths) if (p.busy) list.push({ x: p.x, y: p.y, col: p.def.col });
+  for (const m of G.mats) list.push({ x: m.x, y: m.y, col: '#e08a4a' });
+  for (const s of G.wall) if (s.hp <= 0) list.push({ x: s.mx, y: s.my, col: '#ff5470' });
+  if (!list.length) return;
+  const cx = VW / 2, cy = VH / 2, pad = 54;
+  let drawn = 0;
+  for (const o of list) {
+    if (drawn > 10) break;
+    const sx = (o.x - G.cam.x) * z + cx, sy = (o.y - G.cam.y) * z + cy;
+    if (sx > pad && sx < VW - pad && sy > pad && sy < VH - pad) continue;
+    const a = Math.atan2(sy - cy, sx - cx);
+    const rx = Math.min(cx - pad, Math.abs(Math.cos(a)) > 0.0001 ? Math.abs((cx - pad) / Math.cos(a)) : 1e9);
+    const ry = Math.min(cy - pad, Math.abs(Math.sin(a)) > 0.0001 ? Math.abs((cy - pad) / Math.sin(a)) : 1e9);
+    const r = Math.min(rx, ry);
+    const ex = cx + Math.cos(a) * r, ey = cy + Math.sin(a) * r;
+    ctx.save();
+    ctx.translate(ex, ey); ctx.rotate(a);
+    ctx.globalAlpha = 0.55 + 0.35 * Math.sin(G.t * 6);
+    ctx.fillStyle = o.col;
+    ctx.beginPath(); ctx.moveTo(11, 0); ctx.lineTo(-7, 7); ctx.lineTo(-7, -7); ctx.closePath(); ctx.fill();
+    ctx.restore();
+    drawn++;
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* ------------------------------------------------------- minimap ----- */
+function drawMinimap() {
+  const w = 186, h = w * (ARENA.h / ARENA.w);
+  const x0 = VW - w - 16, y0 = VH - h - 16;
+  const sx = w / ARENA.w, sy = h / ARENA.h;
+  ctx.save();
+  ctx.globalAlpha = 0.85;
+  ctx.fillStyle = 'rgba(10,4,10,0.72)';
+  roundRect(x0 - 4, y0 - 4, w + 8, h + 8, 8); ctx.fill();
+  ctx.strokeStyle = 'rgba(70,40,60,0.9)'; ctx.lineWidth = 1; ctx.stroke();
+  /* wall integrity */
+  for (const s of G.wall) {
+    ctx.strokeStyle = s.hp <= 0 ? '#ff5470' : segColor(s);
+    ctx.lineWidth = s.hp <= 0 ? 2.6 : 1.6;
+    ctx.beginPath();
+    ctx.moveTo(x0 + s.x1 * sx, y0 + s.y1 * sy);
+    ctx.lineTo(x0 + s.x2 * sx, y0 + s.y2 * sy);
+    ctx.stroke();
+  }
+  ctx.fillStyle = 'rgba(160,50,70,0.5)';
+  for (let i = 0; i < G.rbcs.length; i += 3) {
+    const e = G.rbcs[i];
+    ctx.fillRect(x0 + e.x * sx - 1, y0 + e.y * sy - 1, 2, 2);
+  }
+  for (const m of G.mats) {
+    ctx.fillStyle = 'rgba(224,138,74,0.75)';
+    ctx.beginPath(); ctx.arc(x0 + m.x * sx, y0 + m.y * sy, Math.max(2, m.r * sx), 0, TAU); ctx.fill();
+  }
+  for (const p of G.paths) {
+    ctx.fillStyle = p.def.col;
+    const r = p.elite ? 3.4 : 2;
+    ctx.beginPath(); ctx.arc(x0 + p.x * sx, y0 + p.y * sy, r, 0, TAU); ctx.fill();
+  }
+  const c = swarmCenter();
+  ctx.fillStyle = 'rgba(140,225,255,0.95)';
+  ctx.beginPath(); ctx.arc(x0 + c.x * sx, y0 + c.y * sy, 4.2, 0, TAU); ctx.fill();
+  ctx.strokeStyle = 'rgba(140,225,255,0.5)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(x0 + c.x * sx, y0 + c.y * sy, 8, 0, TAU); ctx.stroke();
+  /* viewport box */
+  const z = G.cam.zoom;
+  ctx.strokeStyle = 'rgba(255,255,255,0.28)';
+  ctx.strokeRect(x0 + (G.cam.x - VW / 2 / z) * sx, y0 + (G.cam.y - VH / 2 / z) * sy,
+    (VW / z) * sx, (VH / z) * sy);
+  ctx.restore();
+}
+
+/* ========================================================= 12. UI */
+const ABILITIES = [
+  { key: 'Q', slot: 'ops', ic: '◎', nm: 'Opsonin', has: () => true, max: () => S.opsCd },
+  { key: 'E', slot: 'agg', ic: 'Y', nm: 'Agglutinin', has: () => true, max: () => S.aggCd },
+  { key: '␣', slot: 'ros', ic: '✹', nm: 'Oxidative', has: () => true, max: () => S.rosCd },
+  { key: 'F', slot: 'spray', ic: '≋', nm: 'Superoxide', has: () => (G.up['superoxide'] || 0) > 0, max: () => S.sprayCd },
+  { key: 'R', slot: 'titan', ic: '◉', nm: 'Fusion', has: () => (G.up['titan'] || 0) > 0, max: () => S.titanCd },
+  { key: 'T', slot: 'granz', ic: '⬡', nm: 'Granzyme', has: () => (G.up['granzyme'] || 0) > 0, max: () => S.granzCd },
+  { key: 'C', slot: 'stance', ic: '⇄', nm: 'Stance', has: () => (G.up['m1'] || 0) + (G.up['m2'] || 0) > 0, toggle: true },
+];
+let abEls = [];
+function buildAbilityBar() {
+  const host = $('abilities'); host.innerHTML = ''; abEls = [];
+  for (const a of ABILITIES) {
+    if (!a.has()) continue;
+    const d = document.createElement('div');
+    d.className = 'ab';
+    d.innerHTML = '<span class="k">' + a.key + '</span><span class="ic">' + a.ic +
+      '</span><span class="nm">' + a.nm + '</span><span class="cd"></span>';
+    host.appendChild(d);
+    abEls.push({ a, el: d, cd: d.querySelector('.cd') });
+  }
+}
+function updateAbilityBar() {
+  for (const e of abEls) {
+    if (e.a.toggle) {
+      e.el.className = 'ab ' + (G.stance ? 'on' : 'ready');
+      e.cd.style.height = '0%';
+      continue;
+    }
+    const t = G.cd[e.a.slot] || 0, m = e.a.max();
+    e.cd.style.height = (clamp(t / m, 0, 1) * 100) + '%';
+    e.el.className = 'ab' + (t <= 0 ? ' ready' : '');
+  }
+}
+
+let toastT = 0;
+function toast(txt) { $('toast').textContent = txt; $('toast').style.opacity = 1; toastT = 2.4; }
+
+let synT = null;
+function announceSynergy(s) {
+  $('synGlyph').textContent = s.glyph;
+  $('synName').textContent = s.name;
+  $('synPair').textContent = s.pair;
+  $('synDs').innerHTML = s.ds;
+  $('toast').style.opacity = 0; toastT = 0;   /* the banner owns the screen */
+  const el = $('synergy');
+  el.classList.add('show');
+  clearTimeout(synT);
+  synT = setTimeout(() => el.classList.remove('show'), 4600);
+  shake(10);
+  renderSynergyChips();
+}
+function renderSynergyChips() {
+  const host = $('synActive');
+  host.innerHTML = SYNERGIES.filter(s => G.syn[s.id])
+    .map(s => '<div class="synChip"><i>' + s.glyph + '</i>' + s.name + '</div>').join('');
+}
+
+function showLevelUp() {
+  const avail = UPGRADES.filter(upgradeAvailable);
+  if (!avail.length) {
+    G.pending = 0; G.biomass += 150;
+    toast('LINEAGE COMPLETE  ·  +150 BIOMASS');
+    return;
+  }
+  G.mode = 'levelup';
+  const chosen = [];
+  const pool = avail.slice();
+  while (chosen.length < 3 && pool.length) {
+    let bag = [];
+    for (const u of pool) {
+      let w = 10;
+      const bp = branchPicks(u.br);
+      if (u.br === 'stem') w = 7;
+      if (bp > 0) w += 6;
+      if (u.tier === 3) w += 10;
+      if (chosen.some(c => c.br === u.br)) w *= 0.45;
+      for (let i = 0; i < Math.max(1, Math.round(w)); i++) bag.push(u);
+    }
+    const u = pick(bag);
+    chosen.push(u);
+    pool.splice(pool.indexOf(u), 1);
+  }
+  const host = $('cards'); host.innerHTML = '';
+  $('lvTitle').textContent = 'Lineage Level ' + G.level;
+  for (const u of chosen) {
+    const b = BR[u.br];
+    const el = document.createElement('button');
+    el.className = 'card';
+    el.style.setProperty('--ac', b.ac);
+    el.style.setProperty('--gl', b.gl);
+    const rank = (G.up[u.id] || 0);
+    const gained = synergiesGainedBy(u.id);
+    const synHtml = gained.length
+      ? '<span class="syn">⚡ Completes ' + gained.map(s => s.name).join(' + ') + '</span>' : '';
+    el.innerHTML =
+      '<span class="glyph" style="color:' + b.ac + '">' + b.glyph + '</span>' +
+      '<span class="br">' + b.name + (u.tier ? ' · Tier ' + u.tier : ' · Core') + '</span>' +
+      '<span class="ttl">' + u.name + '</span>' +
+      '<span class="ds">' + u.ds + '</span>' + synHtml +
+      '<span class="ft">' + (u.max > 1 ? 'Rank ' + (rank + 1) + ' / ' + u.max : (u.key ? 'Keystone' : 'Unique')) + '</span>';
+    el.onclick = () => {
+      takeUpgrade(u.id);
+      G.pending--;
+      $('levelup').classList.remove('show');
+      if (G.pending > 0) showLevelUp(); else G.mode = 'play';
+    };
+    host.appendChild(el);
+  }
+  $('levelup').classList.add('show');
+}
+
+function updateHud() {
+  $('waveNum').textContent = G.waveState === 'idle' ? G.wave + 1 : G.wave;
+  $('waveSub').textContent = G.waveState === 'idle'
+    ? 'inbound in ' + Math.max(0, G.waveTimer).toFixed(1) + 's'
+    : (G.spawnQueue.length ? G.spawnQueue.length + ' inbound' : 'clear them out');
+
+  const hk = clamp(G.host / G.hostMax, 0, 1);
+  const hf = $('hostFill');
+  hf.style.width = hk * 100 + '%';
+  hf.className = hk < 0.28 ? 'crit' : '';
+  $('hostTxt').textContent = Math.ceil(G.host) + '%';
+  $('rbcCount').textContent = G.rbcs.length;
+  $('oxy').textContent = Math.round(G.oxy * 100) + '%';
+  $('breaches').textContent = G.breaches;
+  $('breachWrap').className = G.breaches > 0 ? 'warn' : '';
+
+  $('xpFill').style.width = clamp(G.xp / G.xpNext, 0, 1) * 100 + '%';
+  $('xpTxt').textContent = 'LVL ' + G.level + '  ·  ' + Math.floor(G.xp) + '/' + G.xpNext;
+  const hp = swarmHp();
+  $('hpFill').style.width = hp * 100 + '%';
+  $('hpTxt').textContent = 'SWARM INTEGRITY ' + Math.round(hp * 100) + '%';
+  $('nodeCount').textContent = G.nodes.length;
+  $('nodeMax').textContent = S.maxNodes;
+  $('biomass').textContent = Math.floor(G.biomass);
+  let dg = 0; for (const n of G.nodes) if (n.dig) dg++;
+  $('digCount').textContent = dg;
+  $('threatCount').textContent = G.paths.length;
+  const ag = $('antigen');
+  ag.textContent = G.present
+    ? 'ANTIGEN ' + PATHO[G.present.k].name.toUpperCase() + '  ' + Math.ceil(G.present.t) + 's'
+    : '';
+  const st = $('stance');
+  if (G.stance === 'M1') { st.textContent = 'M1 INFLAMMATORY'; st.style.color = '#ff9a5e'; }
+  else if (G.stance === 'M2') { st.textContent = 'M2 RESOLVING'; st.style.color = '#8affa0'; }
+  else st.textContent = '';
+  $('hint').style.opacity = G.elapsed > 28 ? 0 : 1;
+  updateAbilityBar();
+}
+
+/* ====================================================== 13. INPUT */
+const mouse = { x: 0, y: 0 };
+window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+window.addEventListener('mousedown', e => {
+  if (G.mode !== 'play') return;
+  if (e.button === 0) G.form = 0;
+  if (e.button === 2) G.form = 2;
+});
+window.addEventListener('mouseup', e => { if (e.button === 0 || e.button === 2) G.form = 1; });
+window.addEventListener('contextmenu', e => e.preventDefault());
+window.addEventListener('blur', () => { G.form = 1; });
+window.addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (k === 'p' && (G.mode === 'play' || G.mode === 'paused')) {
+    G.mode = G.mode === 'play' ? 'paused' : 'play';
+    $('pause').classList.toggle('show', G.mode === 'paused');
+  }
+  if (G.mode !== 'play') return;
+  if (k === 'q') fireOpsonin();
+  else if (k === 'e') fireAgglutinin();
+  else if (k === ' ') { e.preventDefault(); oxidativeBurst(); }
+  else if (k === 'f') superoxideSpray();
+  else if (k === 'r') giantCellFusion();
+  else if (k === 't') granzymeSentence();
+  else if (k === 'c') toggleStance();
+});
+
+/* ================================================ GAME CONTROL */
+function reset() {
+  G.mode = 'play';
+  G.t = 0; G.elapsed = 0;
+  G.nodes = []; G.paths = []; G.projs = []; G.fx = []; G.pops = [];
+  G.rbcs = []; G.mats = [];
+  G.level = 1; G.xp = 0; G.xpNext = 55; G.biomass = 0; G.pending = 0;
+  G.wave = 0; G.waveState = 'idle'; G.waveTimer = 4; G.spawnQueue = [];
+  G.kills = 0; G.lysed = 0; G.memory = {}; G.up = {}; G.order = []; G.stance = null;
+  G.titan = null; G.granzyme = null; G.buffs.interleukin = 0; G.seen = {};
+  G.syn = {}; G.present = null;
+  G.tel = { lysis: 0, burst: 0, clear: 0, wallHost: 0, matHost: 0 };
+  $('synergy').classList.remove('show'); renderSynergyChips();
+  G.host = 100; G.oxy = 1; G.rbcTimer = 0; G.mitosisBlock = 0;
+  G.cd = { ops: 0, agg: 0, ros: 0, spray: 0, titan: 0, granz: 0 };
+  G.form = 1; G.formLerp = FORM_R[1];
+  G.beacon.x = ARENA.w / 2; G.beacon.y = ARENA.h / 2;
+  G.cam.x = ARENA.w / 2; G.cam.y = ARENA.h / 2; G.cam.zoom = 1; G.cam.shake = 0;
+  G.shx = 0; G.shy = 0; G.dangerFlash = 0; G.mitosisT = 0;
+  recalc();
+  initWall();
+  initPlatelets();
+  for (let i = 0; i < 130; i++) spawnRbc();
+  for (let i = 0; i < 18; i++) spawnNode(ARENA.w / 2 + rand(-80, 80), ARENA.h / 2 + rand(-80, 80));
+  buildAbilityBar();
+  $('menu').classList.remove('show');
+  $('gameover').classList.remove('show');
+  $('levelup').classList.remove('show');
+  $('pause').classList.remove('show');
+  toast('IMMUNE RESPONSE INITIATED');
+}
+
+function gameOver(reason) {
+  G.mode = 'dead';
+  $('goTitle').textContent = reason === 'swarm' ? 'SWARM LOST' : 'HOST LOST';
+  $('goSub').textContent = reason === 'swarm'
+    ? 'Every leukocyte has been destroyed — the host is defenceless'
+    : 'Systemic collapse — the body could not be held together';
+  $('goWave').textContent = G.wave;
+  $('goKills').textContent = G.kills;
+  $('goBio').textContent = Math.floor(G.biomass);
+  $('goLvl').textContent = G.level;
+  $('goLysed').textContent = G.lysed;
+  $('goHost').textContent = Math.max(0, Math.ceil(G.host)) + '%';
+  const counts = {};
+  for (const id of G.order) counts[id] = (counts[id] || 0) + 1;
+  const html = Object.keys(counts).map(id => {
+    const u = UP_BY_ID[id];
+    return '<span style="border-color:' + BR[u.br].ac + '55;color:' + BR[u.br].ac + '">' +
+      u.name + (counts[id] > 1 ? ' ×' + counts[id] : '') + '</span>';
+  }).join('');
+  const syn = SYNERGIES.filter(s => G.syn[s.id])
+    .map(s => '<span style="border-color:#ffab3399;color:#ffd76a">' + s.glyph + '  ' + s.name + '</span>').join('');
+  $('goBuild').innerHTML = (html || '<span>No differentiation — the swarm stayed undifferentiated.</span>') +
+    (syn ? '<div style="margin-top:10px">' + syn + '</div>' : '');
+  $('gameover').classList.add('show');
+}
+
+$('startBtn').onclick = reset;
+$('againBtn').onclick = reset;
+
+/* ================================================== 14. MAIN LOOP */
+let last = performance.now();
+function frame(now) {
+  let dt = (now - last) / 1000; last = now;
+  dt = Math.min(dt, 0.034);
+  G.dt = dt;
+
+  if (G.mode === 'play') {
+    /* G.turbo runs the simulation faster without enlarging dt, so physics and
+       collision stay identical. Used by the balance harness; 1 in normal play. */
+    const steps = Math.max(1, Math.min(12, G.turbo || 1));
+    for (let i = 0; i < steps && G.mode === 'play'; i++) stepSim(dt);
+  }
+  drawFrame(dt);
+  requestAnimationFrame(frame);
+}
+
+function stepSim(dt) {
+  {
+    G.t += dt; G.elapsed += dt;
+    const z = G.cam.zoom;
+    G.beacon.x = clamp(G.cam.x + (mouse.x - VW / 2) / z, 20, ARENA.w - 20);
+    G.beacon.y = clamp(G.cam.y + (mouse.y - VH / 2) / z, 20, ARENA.h - 20);
+
+    for (const k in G.cd) if (G.cd[k] > 0) G.cd[k] = Math.max(0, G.cd[k] - dt);
+
+    updateWaves(dt);
+    updateWall(dt);
+    updateSwarm(dt);
+    updateTitan(dt);
+    updatePathogens(dt);
+    contactPass(dt);
+    cullNodes();
+    updateRbcs(dt);
+    updateMats(dt);
+    updateProjectiles(dt);
+    updateGranzyme(dt);
+    updateFx(dt);
+    updatePlatelets(dt);
+    recalc();                                     /* oxygen feeds back into speed */
+
+    if (G.pending > 0 && G.mode === 'play') showLevelUp();
+    if (G.host <= 0) gameOver('host');
+    else if (!G.nodes.length && !G.titan) gameOver('swarm');
+
+    const hk = G.host / G.hostMax;
+    G.dangerFlash = hk < 0.3 ? (0.3 - hk) * 3 * (0.6 + 0.4 * Math.sin(G.t * 9)) : 0;
+  }
+}
+
+function drawFrame(dt) {
+  const c = swarmCenter();
+  const zt = [1.04, 0.96, 0.82][G.form];
+  G.cam.zoom = lerp(G.cam.zoom, zt, 1 - Math.exp(-3 * dt));
+  G.cam.x = lerp(G.cam.x, (c.x * 2 + G.beacon.x) / 3, 1 - Math.exp(-6 * dt));
+  G.cam.y = lerp(G.cam.y, (c.y * 2 + G.beacon.y) / 3, 1 - Math.exp(-6 * dt));
+  G.cam.shake *= Math.exp(-4.5 * dt);
+  G.shx = rand(-1, 1) * G.cam.shake;
+  G.shy = rand(-1, 1) * G.cam.shake;
+
+  if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').style.opacity = 0; }
+
+  render();
+  if (G.mode !== 'menu') updateHud();
+}
+
+/* boot: an idle vessel behind the menu */
+recalc();
+initWall();
+initPlatelets();
+for (let i = 0; i < 110; i++) spawnRbc();
+G.cam.x = ARENA.w / 2; G.cam.y = ARENA.h / 2;
+for (let i = 0; i < 14; i++) spawnNode(ARENA.w / 2 + rand(-120, 120), ARENA.h / 2 + rand(-120, 120));
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
