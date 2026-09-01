@@ -93,15 +93,28 @@ b{font-weight:700}
 /* ---------- touch controls ---------- */
 #touchctl{position:absolute;left:0;top:0;right:0;bottom:0;pointer-events:none;display:none}
 body.touch #touchctl{display:block}
-.pad{position:absolute;pointer-events:auto;width:78px;height:78px;border-radius:50%;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
-  background:#0c1620cc;border:1px solid #2b5573;color:#9fc8e0;
-  font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;touch-action:none;
-  box-shadow:0 6px 22px #0008}
-.pad .pi{font-size:22px;line-height:1;color:#bfe6ff}
-.pad.on{border-color:#5fe3ff;background:#123246dd;box-shadow:0 0 22px #2ba9e0aa}
-#padCompress{left:16px;bottom:18px}
-#padSpread{left:104px;bottom:18px}
+/* Left thumb owns a floating analog stick: the base appears wherever the
+   thumb lands inside the zone, so there is nothing to aim for. */
+#stickZone{position:absolute;left:0;bottom:0;width:46%;height:80%;
+  pointer-events:auto;touch-action:none}
+#stick{position:absolute;width:118px;height:118px;border-radius:50%;margin:-59px 0 0 -59px;
+  border:2px solid #2b5573;background:radial-gradient(circle,#0c162066,#0c1620cc);
+  display:none;pointer-events:none;box-shadow:0 0 26px #0006}
+#stick.on{display:block}
+#stick::after{content:'';position:absolute;left:50%;top:50%;width:76px;height:76px;
+  margin:-38px 0 0 -38px;border-radius:50%;border:1px dashed #2b557388}
+#stickKnob{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;
+  border-radius:50%;background:radial-gradient(circle at 40% 35%,#9fe3ff,#2b7fb0);
+  border:1px solid #7fd4ff;box-shadow:0 0 22px #2ba9e0aa}
+.rbtn{position:absolute;pointer-events:auto;border-radius:50%;touch-action:none;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  background:#0c1620dd;border:1px solid #2b5573;color:#9fc8e0;
+  font-size:8px;letter-spacing:.08em;text-transform:uppercase;box-shadow:0 6px 22px #0008}
+.rbtn .pi{font-size:20px;line-height:1;color:#bfe6ff}
+.rbtn.on{border-color:#5fe3ff;background:#123246ee;box-shadow:0 0 22px #2ba9e0aa}
+#btnCompress{right:14px;bottom:14px;width:80px;height:80px}
+#btnSpread{right:100px;bottom:22px;width:62px;height:62px;font-size:7.5px}
+#btnSpread .pi{font-size:17px}
 #rotate{position:absolute;left:50%;top:52%;transform:translateX(-50%);display:none;
   padding:9px 16px;border-radius:20px;background:#12283ae6;border:1px solid #2b5573;
   color:#bfe6ff;font-size:11px;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap}
@@ -124,12 +137,13 @@ body.touch.portrait #rotate{display:block}
   #tr{right:8px;top:8px;font-size:9px;line-height:1.5}
   #synActive{gap:3px}
   .synChip{font-size:8px;padding:3px 7px}
-  #abilities{gap:6px;bottom:14px;left:auto;right:12px;transform:none;
-    max-width:58vw;flex-wrap:wrap;justify-content:flex-end}
-  .ab{width:50px;height:50px;border-radius:10px;gap:1px}
-  .ab .ic{font-size:16px}
-  .ab .nm{font-size:6.5px}
-  .ab .k{font-size:8px;top:2px;left:4px}
+  #abilities{gap:5px;bottom:14px;left:auto;right:12px;transform:none;
+    max-width:54vw;flex-wrap:wrap;justify-content:flex-end}
+  .ab{width:46px;height:46px;border-radius:10px;gap:1px}
+  .ab .ic{font-size:15px}
+  .ab .nm{font-size:6px}
+  .ab .k{font-size:7.5px;top:2px;left:4px}
+  body.touch #abilities{bottom:104px;max-width:62vw}
   #hint{display:none}
   #toast{font-size:11px;letter-spacing:.14em;top:14%}
   .tag{font-size:12.5px;line-height:1.6}
@@ -260,8 +274,10 @@ kbd{display:inline-block;min-width:26px;text-align:center;padding:3px 7px;border
   <div id="hint">Mouse steers the cytokine beacon &nbsp;·&nbsp; Hold LMB to compress &nbsp;·&nbsp; RMB to disperse</div>
   <div id="toast"></div>
   <div id="touchctl">
-    <div class="pad" id="padCompress"><span class="pi">◉</span>Compress</div>
-    <div class="pad" id="padSpread"><span class="pi">◌</span>Disperse</div>
+    <div id="stickZone"></div>
+    <div id="stick"><div id="stickKnob"></div></div>
+    <div class="rbtn" id="btnCompress"><span class="pi">◉</span>Compress</div>
+    <div class="rbtn" id="btnSpread"><span class="pi">◌</span>Spread</div>
     <div id="rotate">↻ Rotate to landscape for a wider view</div>
   </div>
 </div>
@@ -284,9 +300,9 @@ kbd{display:inline-block;min-width:26px;text-align:center;padding:3px 7px;border
     lineage before the body fails. Invest in <b>two</b> lineages at once and hybrid
     synergies switch themselves on.</div>
   <div class="keys" id="touchKeys" style="display:none">
-    <kbd>DRAG</kbd><span>Drag anywhere to steer the cytokine beacon</span>
+    <kbd>STICK</kbd><span>Left thumb anywhere on the left — a stick appears under it and steers the swarm</span>
     <kbd>◉</kbd><span>Hold to compress the swarm into a dense ramming ball</span>
-    <kbd>◌</kbd><span>Hold to disperse into a wide filter net</span>
+    <kbd>◌</kbd><span>Hold to spread into a wide filter net</span>
     <kbd>TAP</kbd><span>Tap an ability tile to fire it — they unlock as you differentiate</span>
     <kbd>❚❚</kbd><span>Tap the pause tile to pause</span>
   </div>
@@ -1520,8 +1536,21 @@ function updateFx(dt) {
 /* ==================================================== 8. ABILITIES */
 function aimAngle() {
   const c = swarmCenter(), m = G.beacon;
-  if (Math.abs(m.x - c.x) + Math.abs(m.y - c.y) < 30) return rand(0, TAU);
-  return Math.atan2(m.y - c.y, m.x - c.x);
+  const dx = m.x - c.x, dy = m.y - c.y;
+  if (Math.abs(dx) + Math.abs(dy) >= 30) {
+    G.aimX = dx; G.aimY = dy;
+    return Math.atan2(dy, dx);
+  }
+  /* Beacon sitting on the swarm (stick released, or cursor parked): fire the
+     way the player last pointed, then at the nearest threat, then anywhere. */
+  if (G.aimX || G.aimY) return Math.atan2(G.aimY, G.aimX);
+  let best = null, bd = 1e12;
+  for (const p of G.paths) {
+    const d = d2(p.x, p.y, c.x, c.y);
+    if (d < bd) { bd = d; best = p; }
+  }
+  if (best) return Math.atan2(best.y - c.y, best.x - c.x);
+  return rand(0, TAU);
 }
 function fireOpsonin() {
   if (G.cd.ops > 0 || !G.nodes.length) return;
@@ -2635,42 +2664,80 @@ function coarsePointer() {
 setTouchMode(coarsePointer());
 window.addEventListener('resize', () => { if (coarsePointer()) setTouchMode(true); });
 
-/* --- steering: a mouse hovers, a finger drags. One code path. --- */
+/* --- steering --- */
+/* Desktop keeps cursor steering. Touch gets a floating analog stick: its
+   direction places the beacon ahead of the swarm and its magnitude sets how
+   far ahead, which is what actually governs swarm speed. Releasing settles the
+   beacon back onto the swarm, so letting go means "hold position". */
+const STICK_R = 46;                 // px from base to full deflection
+const STICK_DEAD = 0.14;
+const stick = { id: null, bx: 0, by: 0, nx: 0, ny: 0, mag: 0, active: false };
 let steerId = null;
-function steerTo(e) { mouse.x = e.clientX; mouse.y = e.clientY; }
 
-cv.addEventListener('pointermove', e => {
-  if (e.pointerType === 'mouse') steerTo(e);
-  else if (steerId === e.pointerId) { steerTo(e); e.preventDefault(); }
-}, { passive: false });
-
-cv.addEventListener('pointerdown', e => {
-  if (e.pointerType === 'mouse') {
-    if (G.mode !== 'play') return;
-    if (e.button === 0) G.form = 0;
-    if (e.button === 2) G.form = 2;
-    return;
+function stickSet(cx, cy) {
+  const dx = cx - stick.bx, dy = cy - stick.by;
+  const d = Math.hypot(dx, dy) || 0;
+  let mag = Math.min(1, d / STICK_R);
+  if (mag < STICK_DEAD) { stick.mag = 0; stick.nx = 0; stick.ny = 0; }
+  else {
+    stick.mag = (mag - STICK_DEAD) / (1 - STICK_DEAD);
+    stick.nx = dx / (d || 1); stick.ny = dy / (d || 1);
   }
-  setTouchMode(true);
-  if (steerId !== null) return;              /* first finger steers, others are for the pads */
-  steerId = e.pointerId;
-  steerTo(e);
-  if (cv.setPointerCapture) { try { cv.setPointerCapture(e.pointerId); } catch (_) {} }
-  e.preventDefault();
-}, { passive: false });
-
-function endSteer(e) {
-  if (e.pointerType === 'mouse') { if (e.button === 0 || e.button === 2) G.form = 1; return; }
-  if (steerId === e.pointerId) steerId = null;
+  const kd = Math.min(d, STICK_R);
+  const kx = d ? (dx / d) * kd : 0, ky = d ? (dy / d) * kd : 0;
+  const knob = $('stickKnob');
+  if (knob) knob.style.transform = 'translate(' + kx.toFixed(1) + 'px,' + ky.toFixed(1) + 'px)';
 }
-cv.addEventListener('pointerup', endSteer);
-cv.addEventListener('pointercancel', endSteer);
-window.addEventListener('pointerup', endSteer);
+function stickShow(x, y) {
+  stick.bx = x; stick.by = y; stick.active = true;
+  const el = $('stick');
+  if (el) { el.style.left = x + 'px'; el.style.top = y + 'px'; el.classList.add('on'); }
+}
+function stickHide() {
+  stick.active = false; stick.id = null; stick.mag = 0; stick.nx = 0; stick.ny = 0;
+  const el = $('stick'); if (el) el.classList.remove('on');
+  const knob = $('stickKnob'); if (knob) knob.style.transform = 'translate(0,0)';
+}
 
+const stickEl = $('stickZone');
+if (stickEl) {
+  stickEl.addEventListener('pointerdown', e => {
+    setTouchMode(true);
+    if (stick.id !== null) return;
+    stick.id = e.pointerId;
+    stickShow(e.clientX, e.clientY);
+    stickSet(e.clientX, e.clientY);
+    if (stickEl.setPointerCapture) { try { stickEl.setPointerCapture(e.pointerId); } catch (_) {} }
+    e.preventDefault();
+  }, { passive: false });
+  stickEl.addEventListener('pointermove', e => {
+    if (stick.id !== e.pointerId) return;
+    stickSet(e.clientX, e.clientY);
+    e.preventDefault();
+  }, { passive: false });
+  const drop = e => { if (stick.id === e.pointerId) stickHide(); };
+  stickEl.addEventListener('pointerup', drop);
+  stickEl.addEventListener('pointercancel', drop);
+  window.addEventListener('pointerup', drop);
+}
+
+/* mouse steering stays on the canvas */
+cv.addEventListener('pointermove', e => {
+  if (e.pointerType === 'mouse') { mouse.x = e.clientX; mouse.y = e.clientY; }
+});
+cv.addEventListener('pointerdown', e => {
+  if (e.pointerType !== 'mouse') { setTouchMode(true); return; }
+  if (G.mode !== 'play') return;
+  if (e.button === 0) G.form = 0;
+  if (e.button === 2) G.form = 2;
+});
+window.addEventListener('pointerup', e => {
+  if (e.pointerType === 'mouse' && (e.button === 0 || e.button === 2)) G.form = 1;
+});
 window.addEventListener('contextmenu', e => e.preventDefault());
-window.addEventListener('blur', () => { G.form = 1; steerId = null; });
+window.addEventListener('blur', () => { G.form = 1; steerId = null; stickHide(); });
 
-/* --- formation pads --- */
+/* --- formation buttons (right thumb) --- */
 function bindPad(id, form) {
   const el = $(id);
   if (!el) return;
@@ -2689,8 +2756,8 @@ function bindPad(id, form) {
   el.addEventListener('pointercancel', off);
   el.addEventListener('pointerleave', off);
 }
-bindPad('padCompress', 0);
-bindPad('padSpread', 2);
+bindPad('btnCompress', 0);
+bindPad('btnSpread', 2);
 
 window.addEventListener('keydown', e => {
   const k = e.key.toLowerCase();
@@ -2722,7 +2789,8 @@ function reset() {
   G.cd = { ops: 0, agg: 0, ros: 0, spray: 0, titan: 0, granz: 0 };
   G.form = 1; G.formLerp = FORM_R[1];
   steerId = null;                                  /* a finger held across a restart must not stick */
-  document.querySelectorAll('.pad.on').forEach(el => el.classList.remove('on'));
+  stickHide();
+  document.querySelectorAll('.rbtn.on').forEach(el => el.classList.remove('on'));
   G.beacon.x = ARENA.w / 2; G.beacon.y = ARENA.h / 2;
   G.cam.x = ARENA.w / 2; G.cam.y = ARENA.h / 2; G.cam.zoom = 1; G.cam.shake = 0;
   G.shx = 0; G.shy = 0; G.dangerFlash = 0; G.mitosisT = 0;
@@ -2789,8 +2857,22 @@ function stepSim(dt) {
   {
     G.t += dt; G.elapsed += dt;
     const z = G.cam.zoom;
-    G.beacon.x = clamp(G.cam.x + (mouse.x - VW / 2) / z, 20, ARENA.w - 20);
-    G.beacon.y = clamp(G.cam.y + (mouse.y - VH / 2) / z, 20, ARENA.h - 20);
+    if (TOUCH) {
+      const c = swarmCenter();
+      if (stick.active && stick.mag > 0) {
+        /* ~110 is where the swarm begins to move, ~260 saturates its speed */
+        const lead = 110 + stick.mag * 150;
+        G.beacon.x = clamp(c.x + stick.nx * lead, 20, ARENA.w - 20);
+        G.beacon.y = clamp(c.y + stick.ny * lead, 20, ARENA.h - 20);
+      } else {
+        const k = 1 - Math.exp(-6 * dt);
+        G.beacon.x = lerp(G.beacon.x, c.x, k);
+        G.beacon.y = lerp(G.beacon.y, c.y, k);
+      }
+    } else {
+      G.beacon.x = clamp(G.cam.x + (mouse.x - VW / 2) / z, 20, ARENA.w - 20);
+      G.beacon.y = clamp(G.cam.y + (mouse.y - VH / 2) / z, 20, ARENA.h - 20);
+    }
 
     for (const k in G.cd) if (G.cd[k] > 0) G.cd[k] = Math.max(0, G.cd[k] - dt);
 

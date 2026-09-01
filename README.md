@@ -32,11 +32,15 @@ regardless — so hybrid laptops get mouse controls until you actually reach for
 
 | Input | Action |
 | :--- | :--- |
-| Drag anywhere | Steer the beacon. The first finger down owns steering; later fingers are ignored so you can hold a pad without losing the swarm |
-| **Compress** pad | Hold to ball the swarm up (bottom-left) |
-| **Disperse** pad | Hold to spread into a filter net |
+| Left thumb, anywhere on the left | A floating analog stick appears under your thumb and steers the swarm. Its direction places the beacon ahead of the swarm; its magnitude sets how far ahead, which is what governs swarm speed. Release to hold position. |
+| **Compress** button (right thumb) | Hold to ball the swarm up |
+| **Spread** button | Hold to widen into a filter net |
 | Tap an ability tile | Fires it — tiles are live on desktop too, so abilities are clickable there as well |
 | Pause tile | Only present on touch |
+
+Abilities fire in the direction the stick is pushed. With the stick centred they fall back to
+the last direction you pointed, then to the nearest pathogen, so a tap is never wasted on a
+random heading.
 
 Landscape is strongly preferred and the game says so in portrait. The camera pulls back on
 small viewports (`VIEWZOOM`) so a phone still sees a useful slice of the arena instead of ~400
